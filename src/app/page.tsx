@@ -1,0 +1,255 @@
+"use client";
+
+import Image from "next/image";
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import { Container } from "@/components/layout/Container";
+import { site, services, faqs } from "@/lib/mock/site";
+
+export default function Page() {
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
+
+  const words = ["Güven Temelli", "Şefkat Odaklı", "Sürdürülebilir", "Yumuşak ve Net"];
+  const [wordIndex, setWordIndex] = useState(0);
+
+  useEffect(() => {
+    const t = setInterval(() => {
+      setWordIndex((i) => (i + 1) % words.length);
+    }, 1800);
+    return () => clearInterval(t);
+  }, []);
+
+  return (
+    <div className="bg-[#edf3f1]">
+      <Container>
+        {/* HERO */}
+        <section className="py-12 md:py-16">
+<div className="grid items-start gap-10 lg:grid-cols-[1.1fr_0.9fr]">
+            {/* LEFT */}
+            <div className="min-w-0 pt-2">
+              <div className="inline-flex items-center gap-2 rounded-full border border-slate-300/60 bg-white/50 px-4 py-2 text-xs text-slate-700 shadow-sm backdrop-blur">
+                <span className="h-1.5 w-1.5 rounded-full bg-slate-400" />
+                Gizlilik • Güven • Profesyonellik
+              </div>
+
+              <h1 className="mt-6 max-w-2xl text-balance leading-[1.02] tracking-[-0.02em] text-slate-900">
+                <span className="block text-4xl font-semibold md:text-5xl lg:text-6xl">
+                  Zihinsel Sağlık İçin
+                </span>
+
+                <span className="mt-2 block">
+                  <span className="font-signature text-5xl tracking-wide md:text-6xl lg:text-7xl">
+                  <span className="relative inline-block">
+  <span className="block">Bilimsel</span>
+
+  <span className="mt-1 block">
+    <span className="relative inline-block h-[1.05em] overflow-hidden align-baseline">
+      <span key={wordIndex} className="inline-block animate-heroFadeUp">
+        {words[wordIndex]}
+      </span>
+    </span>
+  </span>
+
+  <span className="mt-1 block">Çözümler</span>
+
+  <span
+    aria-hidden
+    className="pointer-events-none absolute -bottom-2 left-0 h-[10px] w-full rounded-full bg-slate-900/10 blur-[6px]"
+  />
+</span>
+
+                  </span>
+                </span>
+              </h1>
+
+              <p className="mt-5 max-w-xl text-base leading-relaxed text-slate-700 md:text-lg">
+                {site.heroLead}
+              </p>
+
+              <div className="mt-7 flex flex-wrap items-center gap-3">
+                <Link
+                  href="/randevu"
+                  className="group inline-flex items-center justify-center rounded-full bg-slate-900 px-6 py-3 text-sm font-medium text-white shadow-sm transition hover:bg-slate-800 hover:shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900/30"
+                >
+                  Randevu Al
+                  <span className="ml-2 transition-transform group-hover:translate-x-0.5">→</span>
+                </Link>
+
+                <Link
+                  href="/hakkinda"
+                  className="inline-flex items-center justify-center rounded-full border border-slate-300/70 bg-white/60 px-6 py-3 text-sm font-medium text-slate-900 shadow-sm transition hover:bg-white/80 hover:shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900/20"
+                >
+                  Hakkımda
+                </Link>
+
+                <Link
+                  href="/iletisim"
+                  className="inline-flex items-center justify-center rounded-full border border-slate-300/50 bg-transparent px-6 py-3 text-sm font-medium text-slate-800 transition hover:bg-white/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900/15"
+                >
+                  İletişim
+                </Link>
+              </div>
+
+              <div className="mt-7 grid gap-4 sm:grid-cols-2">
+                <div className="rounded-3xl border border-slate-200/70 bg-white/60 p-6 shadow-sm backdrop-blur transition hover:-translate-y-0.5 hover:bg-white/75 hover:shadow">
+                  <div className="text-sm font-semibold text-slate-900">Online Seans</div>
+                  <p className="mt-2 text-sm leading-relaxed text-slate-700">
+                    Güvenli bağlantı ile, bulunduğun yerden.
+                  </p>
+                </div>
+
+                <div className="rounded-3xl border border-slate-200/70 bg-white/60 p-6 shadow-sm backdrop-blur transition hover:-translate-y-0.5 hover:bg-white/75 hover:shadow">
+                  <div className="text-sm font-semibold text-slate-900">Ön Bilgilendirme</div>
+                  <p className="mt-2 text-sm leading-relaxed text-slate-700">
+                    Testler bölümünde kısa bir ön değerlendirme yapabilirsin.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* RIGHT: PHOTO CARD */}
+            <div className="mx-auto w-full max-w-[440px]">
+              <div className="rounded-[32px] border border-slate-200/70 bg-white/60 p-3 shadow-sm backdrop-blur">
+                <div className="overflow-hidden rounded-[28px] border border-slate-200/70 bg-slate-100">
+                  <div className="relative aspect-[3/4] w-full">
+                    <Image
+                      src="/images/eda-keklik-2.png"
+                      alt="Psikolog Eda Keklik Akalp"
+                      fill
+                      className="object-cover"
+                      priority
+                    />
+                  </div>
+                </div>
+
+                <div className="mt-4 rounded-[26px] border border-slate-200/70 bg-white/70 p-6 shadow-sm">
+                  <div className="text-lg font-semibold text-slate-900">Psikolog Eda Keklik Akalp</div>
+                  <p className="mt-2 text-sm leading-relaxed text-slate-700">
+                    Bireysel Terapi • Aile & Çift Terapisi • Çocuk & Ergen • Oyun Terapisi • Cinsel Terapi
+                  </p>
+
+                  <div className="mt-5 flex flex-wrap gap-2">
+                    {["Güven", "Tarafsızlık", "Anlayış"].map((t) => (
+                      <span
+                        key={t}
+                        className="rounded-full border border-slate-200/70 bg-white/60 px-3 py-2 text-xs text-slate-700 shadow-sm"
+                      >
+                        {t}
+                      </span>
+                    ))}
+                  </div>
+
+                  <div className="mt-5">
+                    <Link
+                      href="/randevu"
+                      className="inline-flex w-full items-center justify-center rounded-full bg-slate-900 px-5 py-3 text-sm font-medium text-white shadow-sm transition hover:bg-slate-800 hover:shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900/30"
+                    >
+                      Uygun Saatleri Gör
+                    </Link>
+                  </div>
+                </div>
+              </div>
+
+              <p className="mt-4 text-center text-xs text-slate-600">
+                Seanslar etik ilkeler ve gizlilik esasına göre yürütülür.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* SERVICES */}
+        <section className="pb-12 md:pb-14">
+          <div className="rounded-3xl border border-slate-200/70 bg-white/60 p-8 shadow-sm backdrop-blur md:p-10">
+            <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+              <div>
+                <h2 className="text-2xl font-semibold tracking-tight text-slate-900 md:text-3xl">
+                  Hizmetler
+                </h2>
+                <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-700 md:text-base">
+                  İhtiyacınıza uygun hizmeti seçip randevu oluşturabilirsiniz.
+                </p>
+              </div>
+
+              <Link
+                href="/hizmetler"
+                className="inline-flex w-fit items-center justify-center rounded-full border border-slate-300/70 bg-white/70 px-5 py-3 text-sm font-medium text-slate-900 shadow-sm transition hover:bg-white/90 hover:shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900/20"
+              >
+                Tümünü Gör
+              </Link>
+            </div>
+
+            <div className="mt-7 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {services.slice(0, 6).map((s) => (
+                <div
+                  key={s.id}
+                  className="group rounded-3xl border border-slate-200/70 bg-white/70 p-7 shadow-sm transition hover:-translate-y-0.5 hover:bg-white/90 hover:shadow focus-within:ring-2 focus-within:ring-slate-900/10"
+                >
+                  <h3 className="text-lg font-semibold text-slate-900">{s.title}</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-slate-700">{s.description}</p>
+
+                  <div className="mt-5 flex items-center justify-between">
+                    <span className="rounded-full border border-slate-200/70 bg-white/60 px-3 py-2 text-xs text-slate-700 shadow-sm">
+                      {s.durationMin} dk
+                    </span>
+
+                    <Link href="/randevu" className="text-sm font-medium text-slate-900 transition hover:underline">
+                      Randevu Al →
+                    </Link>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* FAQ */}
+        <section className="pb-16">
+          <div className="rounded-3xl border border-slate-200/70 bg-white/60 p-8 shadow-sm backdrop-blur md:p-10">
+            <h2 className="text-2xl font-semibold tracking-tight text-slate-900 md:text-3xl">
+              Sık Sorulan Sorular
+            </h2>
+
+            <div className="mt-6 divide-y divide-slate-200/60">
+              {faqs.map((f, idx) => {
+                const isOpen = openFaq === idx;
+
+                return (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => setOpenFaq(isOpen ? null : idx)}
+                    className="w-full text-left"
+                  >
+                    <div className="flex items-center justify-between py-5">
+                      <span className="text-sm font-medium text-slate-900 md:text-base">{f.q}</span>
+
+                      <span
+                        className={`ml-4 inline-flex h-6 w-6 items-center justify-center rounded-full border text-sm transition ${
+                          isOpen
+                            ? "rotate-45 border-slate-900 text-slate-900"
+                            : "border-slate-300 text-slate-400"
+                        }`}
+                      >
+                        +
+                      </span>
+                    </div>
+
+                    <div
+                      className={`grid transition-all duration-300 ease-in-out ${
+                        isOpen ? "grid-rows-[1fr] pb-5" : "grid-rows-[0fr]"
+                      }`}
+                    >
+                      <div className="overflow-hidden">
+                        <p className="max-w-2xl text-sm leading-relaxed text-slate-700">{f.a}</p>
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+      </Container>
+    </div>
+  );
+}
