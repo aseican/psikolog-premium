@@ -2,18 +2,33 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
 
-const links = [
-  { href: "/", label: "Ana Sayfa" },
-  { href: "/hakkinda", label: "Hakkımızda" },
-  { href: "/hizmetler", label: "Hizmetler" },
-  { href: "/testler", label: "Testler" },
-  { href: "/randevu", label: "Randevu Al", cta: true },
-  { href: "/iletisim", label: "İletişim" },
-];
+type NavItem = { label: string; href: string; cta?: boolean };
 
 export function Nav() {
   const [open, setOpen] = useState(false);
+  const [links, setLinks] = useState<NavItem[]>([
+    { href: "/", label: "Ana Sayfa" },
+    { href: "/hakkinda", label: "Hakkımızda" },
+    { href: "/hizmetler", label: "Hizmetler" },
+    { href: "/testler", label: "Testler" },
+    { href: "/randevu", label: "Randevu Al", cta: true },
+    { href: "/iletisim", label: "İletişim" },
+  ]);
+
+  useEffect(() => {
+    supabase
+      .from("cms_blocks")
+      .select("data")
+      .eq("key", "nav")
+      .single()
+      .then(({ data, error }) => {
+        if (error) return;
+        const items = (data?.data?.items ?? []) as NavItem[];
+        if (Array.isArray(items) && items.length) setLinks(items);
+      });
+  }, []);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -31,15 +46,17 @@ export function Nav() {
   }, [open]);
 
   return (
-    <header className="sticky top-0 z-50 border-b border-slate-200/60 bg-[#edf3f1]/75 backdrop-blur supports-[backdrop-filter]:bg-[#edf3f1]/60">
+    <header
+      className="sticky top-0 z-50 border-b border-slate-200/60 backdrop-blur supports-[backdrop-filter]:bg-[#edf3f1]/60"
+      style={{
+        // Navbar bg ayrı: --nav-bg (yoksa --site-bg)
+        backgroundColor: "color-mix(in srgb, var(--nav-bg, var(--site-bg)) 80%, transparent)",
+      }}
+    >
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
         <Link href="/" className="select-none leading-tight text-slate-900">
-          <span className="font-signature block sm:inline text-2xl">
-            Psikolog Eda Keklik
-          </span>
-          <span className="font-signature block sm:inline sm:ml-2 text-2xl">
-            Akalp
-          </span>
+          <span className="font-signature block sm:inline text-2xl">Psikolog Eda Keklik</span>
+          <span className="font-signature block sm:inline sm:ml-2 text-2xl">Akalp</span>
         </Link>
 
         {/* Desktop nav */}
@@ -64,8 +81,6 @@ export function Nav() {
             })}
         </nav>
 
-        
-
         {/* Mobile menu button */}
         <button
           type="button"
@@ -74,13 +89,7 @@ export function Nav() {
           aria-label="Menüyü aç"
           aria-expanded={open}
         >
-          <svg
-            width="22"
-            height="22"
-            viewBox="0 0 24 24"
-            fill="none"
-            aria-hidden="true"
-          >
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
             <path
               d="M4 7h16M4 12h16M4 17h16"
               stroke="currentColor"
@@ -116,13 +125,7 @@ export function Nav() {
                 className="inline-flex items-center justify-center rounded-full border border-slate-300/60 bg-white/60 p-2 text-slate-800 shadow-sm transition hover:bg-white/90 hover:shadow"
                 aria-label="Kapat"
               >
-                <svg
-                  width="22"
-                  height="22"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  aria-hidden="true"
-                >
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                   <path
                     d="M7 7l10 10M17 7L7 17"
                     stroke="currentColor"
@@ -142,20 +145,11 @@ export function Nav() {
                     onClick={() => setOpen(false)}
                     className={[
                       "flex items-center justify-between rounded-xl px-4 py-3 text-sm transition",
-                      l.cta
-                        ? "mt-1 bg-slate-900 text-white hover:bg-slate-800"
-                        : "text-slate-800 hover:bg-white/70",
+                      l.cta ? "mt-1 bg-slate-900 text-white hover:bg-slate-800" : "text-slate-800 hover:bg-white/70",
                     ].join(" ")}
                   >
                     <span className="font-medium">{l.label}</span>
-                    <span
-                      className={[
-                        "text-xs",
-                        l.cta ? "text-white/80" : "text-slate-400",
-                      ].join(" ")}
-                    >
-                      →
-                    </span>
+                    <span className={["text-xs", l.cta ? "text-white/80" : "text-slate-400"].join(" ")}>→</span>
                   </Link>
                 ))}
               </div>

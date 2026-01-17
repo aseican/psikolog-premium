@@ -2,7 +2,15 @@
 @import "tailwindcss";
 
 :root {
-  --background: #edf3f1;
+  /* SITE THEME (DB’den beslenecek) */
+  --site-bg: #edf3f1;
+  --site-primary: #0f766e;
+
+  /* primary'i Tailwind-like alpha ile kullanmak için */
+  --site-primary-rgb: 15 118 110;
+
+  /* mevcut tasarım değişkenleri (dokunulmadı) */
+  --background: var(--site-bg);
   --foreground: #0f172a;
   --muted: #475569;
   --radius-lg: 24px;
@@ -33,6 +41,27 @@ p {
   line-height: 1.75;
   color: var(--muted);
 }
+
+/* THEME UTILITIES (tasarımı bozmaz, sadece yeni token sağlar) */
+.text-site-primary {
+  color: rgb(var(--site-primary-rgb) / 1);
+}
+.bg-site-primary {
+  background-color: rgb(var(--site-primary-rgb) / 1);
+}
+.border-site-primary {
+  border-color: rgb(var(--site-primary-rgb) / 1);
+}
+.ring-site-primary {
+  --tw-ring-color: rgb(var(--site-primary-rgb) / 1);
+}
+.hover\:text-site-primary:hover {
+  color: rgb(var(--site-primary-rgb) / 1);
+}
+.hover\:bg-site-primary:hover {
+  background-color: rgb(var(--site-primary-rgb) / 1);
+}
+
 @keyframes heroFadeUp {
   from {
     opacity: 0;

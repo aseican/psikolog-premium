@@ -1,30 +1,22 @@
-"use client";
-
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
 import { Container } from "@/components/layout/Container";
-import { site, services, faqs } from "@/lib/mock/site";
+import { getHero, getServices, getFaqs, getHeroWords } from "@/lib/data/site";
+import HeroWords from "@/components/HeroWords";
+import FaqClient from "@/components/FaqClient";
 
-export default function Page() {
-  const [openFaq, setOpenFaq] = useState<number | null>(null);
-
-  const words = ["Güven Temelli", "Şefkat Odaklı", "Sürdürülebilir", "Yumuşak ve Net"];
-  const [wordIndex, setWordIndex] = useState(0);
-
-  useEffect(() => {
-    const t = setInterval(() => {
-      setWordIndex((i) => (i + 1) % words.length);
-    }, 1800);
-    return () => clearInterval(t);
-  }, []);
+export default async function Page() {
+  const hero = await getHero();
+  const services = await getServices();
+  const faqs = await getFaqs();
+  const words = await getHeroWords();
 
   return (
-    <div className="bg-[#edf3f1]">
+    <div className="bg-[var(--site-bg)]">
       <Container>
         {/* HERO */}
         <section className="py-12 md:py-16">
-<div className="grid items-start gap-10 lg:grid-cols-[1.1fr_0.9fr]">
+          <div className="grid items-start gap-10 lg:grid-cols-[1.1fr_0.9fr]">
             {/* LEFT */}
             <div className="min-w-0 pt-2">
               <div className="inline-flex items-center gap-2 rounded-full border border-slate-300/60 bg-white/50 px-4 py-2 text-xs text-slate-700 shadow-sm backdrop-blur">
@@ -39,31 +31,28 @@ export default function Page() {
 
                 <span className="mt-2 block">
                   <span className="font-signature text-5xl tracking-wide md:text-6xl lg:text-7xl">
-                  <span className="relative inline-block">
-  <span className="block">Bilimsel</span>
+                    <span className="relative inline-block">
+                      <span className="block">Bilimsel</span>
 
-  <span className="mt-1 block">
-    <span className="relative inline-block h-[1.05em] overflow-hidden align-baseline">
-      <span key={wordIndex} className="inline-block animate-heroFadeUp">
-        {words[wordIndex]}
-      </span>
-    </span>
-  </span>
+                      <span className="mt-1 block">
+                        <span className="relative inline-block h-[1.05em] overflow-hidden align-baseline">
+                          <HeroWords words={words} />
+                        </span>
+                      </span>
 
-  <span className="mt-1 block">Çözümler</span>
+                      <span className="mt-1 block">Çözümler</span>
 
-  <span
-    aria-hidden
-    className="pointer-events-none absolute -bottom-2 left-0 h-[10px] w-full rounded-full bg-slate-900/10 blur-[6px]"
-  />
-</span>
-
+                      <span
+                        aria-hidden
+                        className="pointer-events-none absolute -bottom-2 left-0 h-[10px] w-full rounded-full bg-slate-900/10 blur-[6px]"
+                      />
+                    </span>
                   </span>
                 </span>
               </h1>
 
               <p className="mt-5 max-w-xl text-base leading-relaxed text-slate-700 md:text-lg">
-                {site.heroLead}
+                {hero.lead}
               </p>
 
               <div className="mt-7 flex flex-wrap items-center gap-3">
@@ -123,7 +112,9 @@ export default function Page() {
                 </div>
 
                 <div className="mt-4 rounded-[26px] border border-slate-200/70 bg-white/70 p-6 shadow-sm">
-                  <div className="text-lg font-semibold text-slate-900">Psikolog Eda Keklik Akalp</div>
+                  <div className="text-lg font-semibold text-slate-900">
+                    Psikolog Eda Keklik Akalp
+                  </div>
                   <p className="mt-2 text-sm leading-relaxed text-slate-700">
                     Bireysel Terapi • Aile & Çift Terapisi • Çocuk & Ergen • Oyun Terapisi • Cinsel Terapi
                   </p>
@@ -179,7 +170,7 @@ export default function Page() {
             </div>
 
             <div className="mt-7 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {services.slice(0, 6).map((s) => (
+              {services.slice(0, 6).map((s: any) => (
                 <div
                   key={s.id}
                   className="group rounded-3xl border border-slate-200/70 bg-white/70 p-7 shadow-sm transition hover:-translate-y-0.5 hover:bg-white/90 hover:shadow focus-within:ring-2 focus-within:ring-slate-900/10"
@@ -189,7 +180,7 @@ export default function Page() {
 
                   <div className="mt-5 flex items-center justify-between">
                     <span className="rounded-full border border-slate-200/70 bg-white/60 px-3 py-2 text-xs text-slate-700 shadow-sm">
-                      {s.durationMin} dk
+                      {s.duration_min ?? s.durationMin} dk
                     </span>
 
                     <Link href="/randevu" className="text-sm font-medium text-slate-900 transition hover:underline">
@@ -209,44 +200,7 @@ export default function Page() {
               Sık Sorulan Sorular
             </h2>
 
-            <div className="mt-6 divide-y divide-slate-200/60">
-              {faqs.map((f, idx) => {
-                const isOpen = openFaq === idx;
-
-                return (
-                  <button
-                    key={idx}
-                    type="button"
-                    onClick={() => setOpenFaq(isOpen ? null : idx)}
-                    className="w-full text-left"
-                  >
-                    <div className="flex items-center justify-between py-5">
-                      <span className="text-sm font-medium text-slate-900 md:text-base">{f.q}</span>
-
-                      <span
-                        className={`ml-4 inline-flex h-6 w-6 items-center justify-center rounded-full border text-sm transition ${
-                          isOpen
-                            ? "rotate-45 border-slate-900 text-slate-900"
-                            : "border-slate-300 text-slate-400"
-                        }`}
-                      >
-                        +
-                      </span>
-                    </div>
-
-                    <div
-                      className={`grid transition-all duration-300 ease-in-out ${
-                        isOpen ? "grid-rows-[1fr] pb-5" : "grid-rows-[0fr]"
-                      }`}
-                    >
-                      <div className="overflow-hidden">
-                        <p className="max-w-2xl text-sm leading-relaxed text-slate-700">{f.a}</p>
-                      </div>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
+            <FaqClient faqs={faqs} />
           </div>
         </section>
       </Container>

@@ -7,10 +7,10 @@ import { Container } from "@/components/layout/Container";
 type PersonKey = "p1" | "p2";
 
 export default function AboutPage() {
-  const [active, setActive] = useState<PersonKey | null>(null);
+  const [active, setActive] = useState<PersonKey | null>("p1");
 
   return (
-    <div className="bg-[#edf3f1]">
+    <div className="bg-[var(--site-bg)]">
       <Container>
         <section className="py-8">
           <h1 className="text-3xl font-semibold tracking-tight">Hakkımda</h1>
@@ -55,9 +55,7 @@ export default function AboutPage() {
                 <div className="text-lg font-semibold text-slate-900">
                   Psikolog Eda Keklik Akalp
                 </div>
-                <div className="mt-1 text-sm text-slate-600">
-                  Bireysel Danışmanlık
-                </div>
+                <div className="mt-1 text-sm text-slate-600">Bireysel Danışmanlık</div>
               </div>
             </button>
 
@@ -85,12 +83,8 @@ export default function AboutPage() {
               </div>
 
               <div className="p-5">
-                <div className="text-lg font-semibold text-slate-900">
-                  Psikolojik Danışman
-                </div>
-                <div className="mt-1 text-sm text-slate-600">
-                  Ergen & Aile Danışmanlığı
-                </div>
+                <div className="text-lg font-semibold text-slate-900">Psikolojik Danışman</div>
+                <div className="mt-1 text-sm text-slate-600">Ergen & Aile Danışmanlığı</div>
               </div>
             </button>
           </div>
@@ -98,7 +92,8 @@ export default function AboutPage() {
           {/* DETAIL */}
           {active === null ? (
             <div className="mt-10 rounded-[32px] border border-slate-200/70 bg-white/60 p-8 text-sm text-slate-700 shadow-sm backdrop-blur">
-Çalışma yaklaşımımı ve uzmanlık alanlarımı keşfedin.            </div>
+              Çalışma yaklaşımımı ve uzmanlık alanlarımı keşfedin.
+            </div>
           ) : (
             <div className="mt-10 rounded-[32px] border border-slate-200/70 bg-white/70 p-8 shadow-sm backdrop-blur">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -108,18 +103,14 @@ export default function AboutPage() {
                       <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
                         Psikolog Eda Keklik Akalp
                       </h2>
-                      <p className="mt-2 text-sm text-slate-600">
-                        Bireysel Danışmanlık
-                      </p>
+                      <p className="mt-2 text-sm text-slate-600">Bireysel Danışmanlık</p>
                     </>
                   ) : (
                     <>
                       <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
                         Psikolojik Danışman
                       </h2>
-                      <p className="mt-2 text-sm text-slate-600">
-                        Ergen & Aile Danışmanlığı
-                      </p>
+                      <p className="mt-2 text-sm text-slate-600">Ergen & Aile Danışmanlığı</p>
                     </>
                   )}
                 </div>
@@ -136,17 +127,14 @@ export default function AboutPage() {
               {active === "p1" && (
                 <>
                   <p className="mt-6 max-w-3xl text-slate-700">
-                    Psikolog Eda Keklik Akalp, İstanbul Kent Üniversitesi Psikoloji
-                    Bölümü’nden <b>onur derecesiyle</b> mezun olmuştur (3.42 AGNO).
-                    Lisans eğitimi boyunca akademik başarısının yanı sıra;
-                    rehabilitasyon merkezleri, hastane, dershane, anaokulu ve çeşitli
+                    Psikolog Eda Keklik Akalp, İstanbul Kent Üniversitesi Psikoloji Bölümü’nden{" "}
+                    <b>onur derecesiyle</b> mezun olmuştur (3.42 AGNO). Lisans eğitimi boyunca akademik
+                    başarısının yanı sıra; rehabilitasyon merkezleri, hastane, dershane, anaokulu ve çeşitli
                     özel kliniklerde kapsamlı staj deneyimleri edinmiştir.
                   </p>
 
                   <div className="mt-6 max-w-3xl rounded-2xl border border-slate-200/70 bg-white/70 p-5 shadow-sm">
-                    <div className="text-sm font-medium text-slate-900">
-                      Lisans Döneminde Görev Aldığı Kurumlar
-                    </div>
+                    <div className="text-sm font-medium text-slate-900">Lisans Döneminde Görev Aldığı Kurumlar</div>
                     <ul className="mt-3 list-disc pl-5 text-sm text-slate-700">
                       <li>Ayna Psikolojik Danışmanlık Merkezi</li>
                       <li>Erk Danışmanlık Merkezi</li>
@@ -159,38 +147,31 @@ export default function AboutPage() {
                   <p className="mt-6 max-w-3xl text-slate-700">
                     Bitirme tezini,{" "}
                     <b>
-                      “Lise Öğrencilerinin Madde Bağımlılığı ile İlgili Bilgi ve
-                      Farkındalık Düzeyi ile Bağımlılık Yapıcı Maddelere Karşı
-                      Tutumlarının İncelenmesi”
+                      “Lise Öğrencilerinin Madde Bağımlılığı ile İlgili Bilgi ve Farkındalık Düzeyi ile Bağımlılık
+                      Yapıcı Maddelere Karşı Tutumlarının İncelenmesi”
                     </b>{" "}
                     başlığıyla tamamlamıştır.
                   </p>
 
                   <p className="mt-4 max-w-3xl text-slate-700">
-                    Mezuniyetinin ardından Bahçeşehir Dora Özel Eğitim ve
-                    Rehabilitasyon Merkezi ile Cebeci Özel Eğitim ve Rehabilitasyon
-                    Merkezi’nde aktif olarak kurum psikoloğu olarak görev yapmıştır.
+                    Mezuniyetinin ardından Bahçeşehir Dora Özel Eğitim ve Rehabilitasyon Merkezi ile Cebeci Özel
+                    Eğitim ve Rehabilitasyon Merkezi’nde aktif olarak kurum psikoloğu olarak görev yapmıştır.
                   </p>
 
                   <p className="mt-6 max-w-3xl text-slate-700">
-                    Psikolog Eda Keklik Akalp, her bireyin kendini güvenle ifade
-                    edebileceği bir alan yaratmayı önemser. Psikolojik destek
-                    sürecinde bireylerin içsel güçlerini keşfetmelerine ve
-                    yaşamlarındaki zorluklarla baş etme becerilerini
-                    geliştirmelerine eşlik etmektedir.
+                    Psikolog Eda Keklik Akalp, her bireyin kendini güvenle ifade edebileceği bir alan yaratmayı
+                    önemser. Psikolojik destek sürecinde bireylerin içsel güçlerini keşfetmelerine ve
+                    yaşamlarındaki zorluklarla baş etme becerilerini geliştirmelerine eşlik etmektedir.
                   </p>
 
                   <p className="mt-4 max-w-3xl text-slate-700">
-                    Danışmanlık süreçlerinde <b>güven, anlayış ve tarafsızlık</b>{" "}
-                    ilkelerine bağlı kalarak; bireyin kendini tanıma yolculuğunda,
-                    kaygılarının ötesindeki potansiyeline ulaşmasını amaçlamaktadır.
+                    Danışmanlık süreçlerinde <b>güven, anlayış ve tarafsızlık</b> ilkelerine bağlı kalarak; bireyin
+                    kendini tanıma yolculuğunda, kaygılarının ötesindeki potansiyeline ulaşmasını amaçlamaktadır.
                   </p>
 
                   <div className="mt-8 grid gap-4 md:grid-cols-2">
                     <div className="rounded-2xl border border-slate-200/70 bg-white/70 p-5 shadow-sm">
-                      <div className="text-sm font-medium text-slate-900">
-                        Uzmanlık Alanları
-                      </div>
+                      <div className="text-sm font-medium text-slate-900">Uzmanlık Alanları</div>
                       <ul className="mt-3 list-disc pl-5 text-sm text-slate-700">
                         <li>Bireysel Terapi</li>
                         <li>Aile ve Çift Terapisi</li>
@@ -201,9 +182,7 @@ export default function AboutPage() {
                     </div>
 
                     <div className="rounded-2xl border border-slate-200/70 bg-white/70 p-5 shadow-sm">
-                      <div className="text-sm font-medium text-slate-900">
-                        Uygulayıcı Eğitimleri
-                      </div>
+                      <div className="text-sm font-medium text-slate-900">Uygulayıcı Eğitimleri</div>
                       <ul className="mt-3 list-disc pl-5 text-sm text-slate-700">
                         <li>Bilişsel Davranışçı Terapi (BDT)</li>
                         <li>Aile Danışmanlığı</li>
@@ -217,9 +196,8 @@ export default function AboutPage() {
                   </div>
 
                   <p className="mt-6 max-w-3xl text-slate-700">
-                    Ayrıca <b>Aile Danışmanlığı Eğitimini</b> tamamlamış olup bu
-                    alanda da danışmanlık hizmeti vermektedir. Halihazırda danışan
-                    kabulünü <b>Başakşehir Sevgi Danışmanlık Merkezi</b> üzerinden
+                    Ayrıca <b>Aile Danışmanlığı Eğitimini</b> tamamlamış olup bu alanda da danışmanlık hizmeti
+                    vermektedir. Halihazırda danışan kabulünü <b>Başakşehir Sevgi Danışmanlık Merkezi</b> üzerinden
                     sürdürmektedir.
                   </p>
                 </>
@@ -228,15 +206,13 @@ export default function AboutPage() {
               {active === "p2" && (
                 <>
                   <p className="mt-6 max-w-3xl text-slate-700">
-                    Psikolojik danışmanlık alanında eğitim aldıktan sonra, ergen ve
-                    aile danışmanlığı üzerine çalışmaya başladım. Süreçlerde aileyi
-                    ve bireyi birlikte ele alan bir yaklaşım benimsiyorum.
+                    Psikolojik danışmanlık alanında eğitim aldıktan sonra, ergen ve aile danışmanlığı üzerine
+                    çalışmaya başladım. Süreçlerde aileyi ve bireyi birlikte ele alan bir yaklaşım benimsiyorum.
                   </p>
 
                   <p className="mt-4 max-w-3xl text-slate-700">
-                    Akademik stres, kimlik gelişimi, aile içi iletişim ve ilişki
-                    dinamikleri temel çalışma alanlarım arasında yer alır. Seanslar
-                    danışanın ihtiyaçlarına göre yapılandırılır.
+                    Akademik stres, kimlik gelişimi, aile içi iletişim ve ilişki dinamikleri temel çalışma
+                    alanlarım arasında yer alır. Seanslar danışanın ihtiyaçlarına göre yapılandırılır.
                   </p>
                 </>
               )}
