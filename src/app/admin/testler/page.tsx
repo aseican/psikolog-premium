@@ -2,10 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import Link from "next/link";
 
-type Service = {
+type QuizType = {
   id: string;
-  title: string;
+  name: string;
   description: string;
   icon: string;
   order_index: number;
@@ -13,39 +14,37 @@ type Service = {
   created_at: string;
 };
 
-export default function AdminHizmetlerPage() {
+export default function AdminTestTurleriPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [services, setServices] = useState<Service[]>([]);
+  const [types, setTypes] = useState<QuizType[]>([]);
   const [msg, setMsg] = useState<string | null>(null);
 
-  // Edit modal
-  const [editing, setEditing] = useState<Service | null>(null);
+  const [editing, setEditing] = useState<QuizType | null>(null);
   const [showModal, setShowModal] = useState(false);
 
-  // Form states
-  const [formTitle, setFormTitle] = useState("");
+  const [formName, setFormName] = useState("");
   const [formDescription, setFormDescription] = useState("");
-  const [formIcon, setFormIcon] = useState("🏥");
+  const [formIcon, setFormIcon] = useState("📋");
   const [formActive, setFormActive] = useState(true);
 
   useEffect(() => {
-    loadServices();
+    loadTypes();
   }, []);
 
-  async function loadServices() {
+  async function loadTypes() {
     setLoading(true);
     setMsg(null);
 
     const { data, error } = await supabase
-      .from("services")
+      .from("quiz_types")
       .select("*")
       .order("order_index", { ascending: true });
 
     if (error) {
       setMsg("Hata: " + error.message);
     } else {
-      setServices(data ?? []);
+      setTypes(data ?? []);
     }
 
     setLoading(false);
@@ -53,25 +52,25 @@ export default function AdminHizmetlerPage() {
 
   function openAddModal() {
     setEditing(null);
-    setFormTitle("");
+    setFormName("");
     setFormDescription("");
-    setFormIcon("🏥");
+    setFormIcon("📋");
     setFormActive(true);
     setShowModal(true);
   }
 
-  function openEditModal(service: Service) {
-    setEditing(service);
-    setFormTitle(service.title);
-    setFormDescription(service.description);
-    setFormIcon(service.icon);
-    setFormActive(service.is_active);
+  function openEditModal(type: QuizType) {
+    setEditing(type);
+    setFormName(type.name);
+    setFormDescription(type.description);
+    setFormIcon(type.icon);
+    setFormActive(type.is_active);
     setShowModal(true);
   }
 
   async function handleSave() {
-    if (!formTitle.trim()) {
-      setMsg("Başlık gerekli!");
+    if (!formName.trim()) {
+      setMsg("İsim gerekli!");
       return;
     }
 
@@ -79,21 +78,19 @@ export default function AdminHizmetlerPage() {
     setMsg(null);
 
     const payload = {
-      title: formTitle.trim(),
+      name: formName.trim(),
       description: formDescription.trim(),
       icon: formIcon,
       is_active: formActive,
-      order_index: editing ? editing.order_index : services.length,
+      order_index: editing ? editing.order_index : types.length,
     };
 
     let error;
 
     if (editing) {
-      // Update
-      ({ error } = await supabase.from("services").update(payload).eq("id", editing.id));
+      ({ error } = await supabase.from("quiz_types").update(payload).eq("id", editing.id));
     } else {
-      // Insert
-      ({ error } = await supabase.from("services").insert([payload]));
+      ({ error } = await supabase.from("quiz_types").insert([payload]));
     }
 
     if (error) {
@@ -101,25 +98,25 @@ export default function AdminHizmetlerPage() {
     } else {
       setMsg(editing ? "Güncellendi ✅" : "Eklendi ✅");
       setShowModal(false);
-      loadServices();
+      loadTypes();
     }
 
     setSaving(false);
   }
 
   async function handleDelete(id: string) {
-    if (!confirm("Bu hizmeti silmek istediğinize emin misiniz?")) return;
+    if (!confirm("Bu test türünü silmek istediğinize emin misiniz? İlişkili sorular da silinecek!")) return;
 
     setSaving(true);
     setMsg(null);
 
-    const { error } = await supabase.from("services").delete().eq("id", id);
+    const { error } = await supabase.from("quiz_types").delete().eq("id", id);
 
     if (error) {
       setMsg("Hata: " + error.message);
     } else {
       setMsg("Silindi ✅");
-      loadServices();
+      loadTypes();
     }
 
     setSaving(false);
@@ -127,46 +124,23 @@ export default function AdminHizmetlerPage() {
 
   async function toggleActive(id: string, currentStatus: boolean) {
     const { error } = await supabase
-      .from("services")
+      .from("quiz_types")
       .update({ is_active: !currentStatus })
       .eq("id", id);
 
     if (error) {
       setMsg("Hata: " + error.message);
     } else {
-      loadServices();
+      loadTypes();
     }
   }
 
-  async function moveService(id: string, direction: "up" | "down") {
-    const index = services.findIndex((s) => s.id === id);
-    if (
-      (direction === "up" && index === 0) ||
-      (direction === "down" && index === services.length - 1)
-    ) {
-      return;
-    }
-
-    const newServices = [...services];
-    const targetIndex = direction === "up" ? index - 1 : index + 1;
-    [newServices[index], newServices[targetIndex]] = [newServices[targetIndex], newServices[index]];
-
-    // Update order_index
-    const updates = newServices.map((s, i) => ({ id: s.id, order_index: i }));
-
-    for (const update of updates) {
-      await supabase.from("services").update({ order_index: update.order_index }).eq("id", update.id);
-    }
-
-    loadServices();
-  }
-
-  const iconOptions = ["🏥", "💊", "🧠", "❤️", "🩺", "💬", "👨‍⚕️", "🤝", "🌟", "📋"];
+  const iconOptions = ["📋", "🏥", "❤️", "🤝", "🧠", "💊", "🩺", "💬", "👨‍⚕️", "🌟"];
 
   if (loading) {
     return (
       <div className="mx-auto max-w-6xl px-4 py-10">
-        <h1 className="text-2xl font-semibold text-slate-900">Hizmetler Yönetimi</h1>
+        <h1 className="text-2xl font-semibold text-slate-900">Test Türleri</h1>
         <p className="mt-2 text-slate-600">Yükleniyor...</p>
       </div>
     );
@@ -176,15 +150,17 @@ export default function AdminHizmetlerPage() {
     <div className="mx-auto max-w-6xl px-4 py-10">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-900">Hizmetler Yönetimi</h1>
-          <p className="mt-2 text-slate-600">Site üzerinde gösterilecek hizmetleri yönetin</p>
+          <h1 className="text-2xl font-semibold text-slate-900">Test Türleri</h1>
+          <p className="mt-2 text-slate-600">
+            Test türlerini yönetin (Bireysel, Çift, Aile vb.)
+          </p>
         </div>
 
         <button
           onClick={openAddModal}
           className="rounded-2xl bg-slate-900 px-5 py-3 text-sm font-medium text-white hover:bg-slate-800"
         >
-          + Yeni Hizmet
+          + Yeni Tür Ekle
         </button>
       </div>
 
@@ -194,77 +170,68 @@ export default function AdminHizmetlerPage() {
         </div>
       )}
 
-      {/* Services List */}
       <div className="mt-6 space-y-3">
-        {services.length === 0 ? (
+        {types.length === 0 ? (
           <div className="rounded-3xl border bg-white/60 p-8 text-center">
-            <p className="text-slate-600">Henüz hizmet eklenmemiş</p>
+            <p className="text-slate-600">Henüz test türü eklenmemiş</p>
           </div>
         ) : (
-          services.map((service, index) => (
+          types.map((type) => (
             <div
-              key={service.id}
+              key={type.id}
               className="rounded-3xl border bg-white p-6 transition hover:shadow-md"
             >
               <div className="flex items-start gap-4">
-                <div className="text-4xl">{service.icon}</div>
+                <div className="text-4xl">{type.icon}</div>
 
                 <div className="flex-1">
                   <div className="flex items-start justify-between">
                     <div>
-                      <h3 className="text-lg font-semibold text-slate-900">{service.title}</h3>
-                      <p className="mt-1 text-sm text-slate-600 line-clamp-2">
-                        {service.description}
-                      </p>
+                      <h3 className="text-lg font-semibold text-slate-900">{type.name}</h3>
+                      <p className="mt-1 text-sm text-slate-600">{type.description}</p>
                     </div>
 
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => toggleActive(service.id, service.is_active)}
-                        className={`rounded-full px-3 py-1 text-xs font-medium ${
-                          service.is_active
-                            ? "bg-green-100 text-green-800"
-                            : "bg-gray-100 text-gray-600"
-                        }`}
-                      >
-                        {service.is_active ? "Aktif" : "Pasif"}
-                      </button>
-                    </div>
+                    <button
+                      onClick={() => toggleActive(type.id, type.is_active)}
+                      className={`rounded-full px-3 py-1 text-xs font-medium ${
+                        type.is_active
+                          ? "bg-green-100 text-green-800"
+                          : "bg-gray-100 text-gray-600"
+                      }`}
+                    >
+                      {type.is_active ? "Aktif" : "Pasif"}
+                    </button>
                   </div>
 
                   <div className="mt-4 flex flex-wrap gap-2">
+                    <Link
+                      href={`/admin/testler/sorular/${type.id}`}
+                      className="rounded-xl border bg-blue-50 px-3 py-1.5 text-sm text-blue-700 hover:bg-blue-100"
+                    >
+                      📝 Soruları Düzenle
+                    </Link>
+
+                    <Link
+                      href={`/admin/testler/cevaplar/${type.id}`}
+                      className="rounded-xl border bg-purple-50 px-3 py-1.5 text-sm text-purple-700 hover:bg-purple-100"
+                    >
+                      👁️ Cevapları Gör
+                    </Link>
+
                     <button
-                      onClick={() => openEditModal(service)}
+                      onClick={() => openEditModal(type)}
                       className="rounded-xl border bg-white px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50"
                     >
                       ✏️ Düzenle
                     </button>
 
                     <button
-                      onClick={() => handleDelete(service.id)}
+                      onClick={() => handleDelete(type.id)}
                       disabled={saving}
                       className="rounded-xl border border-red-200 bg-red-50 px-3 py-1.5 text-sm text-red-700 hover:bg-red-100"
                     >
                       🗑️ Sil
                     </button>
-
-                    {index > 0 && (
-                      <button
-                        onClick={() => moveService(service.id, "up")}
-                        className="rounded-xl border bg-white px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50"
-                      >
-                        ⬆️ Yukarı
-                      </button>
-                    )}
-
-                    {index < services.length - 1 && (
-                      <button
-                        onClick={() => moveService(service.id, "down")}
-                        className="rounded-xl border bg-white px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50"
-                      >
-                        ⬇️ Aşağı
-                      </button>
-                    )}
                   </div>
                 </div>
               </div>
@@ -279,7 +246,7 @@ export default function AdminHizmetlerPage() {
           <div className="w-full max-w-2xl rounded-3xl border bg-white p-6">
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-semibold text-slate-900">
-                {editing ? "Hizmeti Düzenle" : "Yeni Hizmet Ekle"}
+                {editing ? "Türü Düzenle" : "Yeni Tür Ekle"}
               </h2>
               <button
                 onClick={() => setShowModal(false)}
@@ -291,11 +258,11 @@ export default function AdminHizmetlerPage() {
 
             <div className="mt-6 space-y-4">
               <label className="block text-sm text-slate-700">
-                Başlık *
+                İsim *
                 <input
                   type="text"
-                  value={formTitle}
-                  onChange={(e) => setFormTitle(e.target.value)}
+                  value={formName}
+                  onChange={(e) => setFormName(e.target.value)}
                   className="mt-2 w-full rounded-2xl border px-4 py-3 text-sm"
                   placeholder="Örn: Bireysel Terapi"
                 />
@@ -307,8 +274,8 @@ export default function AdminHizmetlerPage() {
                   value={formDescription}
                   onChange={(e) => setFormDescription(e.target.value)}
                   className="mt-2 w-full rounded-2xl border px-4 py-3 text-sm"
-                  rows={4}
-                  placeholder="Hizmetin detaylı açıklaması..."
+                  rows={3}
+                  placeholder="Kısa açıklama..."
                 />
               </label>
 
@@ -330,13 +297,6 @@ export default function AdminHizmetlerPage() {
                     </button>
                   ))}
                 </div>
-                <input
-                  type="text"
-                  value={formIcon}
-                  onChange={(e) => setFormIcon(e.target.value)}
-                  className="mt-3 w-full rounded-2xl border px-4 py-3 text-sm"
-                  placeholder="Veya emoji girin..."
-                />
               </label>
 
               <label className="flex items-center gap-2 text-sm text-slate-700">

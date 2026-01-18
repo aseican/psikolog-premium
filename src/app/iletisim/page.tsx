@@ -26,7 +26,14 @@ function extractIframeSrc(html?: string): string | null {
 
 export default function ContactPage() {
   const [contact, setContact] = useState<ContactData>(FALLBACK);
-  const [debug, setDebug] = useState<any>(null);
+
+  // Form states
+  const [formName, setFormName] = useState("");
+  const [formEmail, setFormEmail] = useState("");
+  const [formPhone, setFormPhone] = useState("");
+  const [formMessage, setFormMessage] = useState("");
+  const [sending, setSending] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
 
   useEffect(() => {
     supabase
@@ -35,11 +42,6 @@ export default function ContactPage() {
       .eq("key", "contact")
       .maybeSingle()
       .then(({ data, error }) => {
-        setDebug({
-          error: error ? { message: error.message, code: (error as any).code } : null,
-          data,
-        });
-
         if (error || !data) return;
 
         const d = (data.data ?? {}) as ContactData;
@@ -55,6 +57,40 @@ export default function ContactPage() {
 
   const mapSrc = useMemo(() => extractIframeSrc(contact.mapEmbedHtml), [contact.mapEmbedHtml]);
 
+  async function handleSubmit() {
+    setMsg(null);
+
+    if (!formName.trim() || !formEmail.trim() || !formMessage.trim()) {
+      setMsg("Lütfen zorunlu alanları doldurun");
+      return;
+    }
+
+    setSending(true);
+
+    const { error } = await supabase.from("form_submissions").insert([
+      {
+        form_type: "contact",
+        name: formName.trim(),
+        email: formEmail.trim(),
+        phone: formPhone.trim() || null,
+        message: formMessage.trim(),
+        subject: "İletişim Formu",
+      },
+    ]);
+
+    setSending(false);
+
+    if (error) {
+      setMsg("Hata: " + error.message);
+    } else {
+      setMsg("Mesajınız gönderildi! En kısa sürede size dönüş yapacağız. ✅");
+      setFormName("");
+      setFormEmail("");
+      setFormPhone("");
+      setFormMessage("");
+    }
+  }
+
   return (
     <Container>
       <section className="rounded-3xl border p-8">
@@ -62,7 +98,7 @@ export default function ContactPage() {
           <div>
             <h1 className="text-2xl font-semibold">İletişim</h1>
             <p className="mt-2 text-slate-700">
-              Sorularınız için ulaşabilirsiniz. Randevu almak için “Randevu Al” sayfasını kullanabilirsiniz.
+              Sorularınız için ulaşabilirsiniz. Randevu almak için "Randevu Al" sayfasını kullanabilirsiniz.
             </p>
           </div>
 
@@ -85,7 +121,14 @@ export default function ContactPage() {
                 <button
                   className="mt-4 rounded-2xl border px-4 py-2 text-sm font-medium hover:bg-slate-50"
                   type="button"
-                  onClick={() => alert("Demo: WhatsApp yönlendirmesi burada olacak.")}
+                  onClick={() => {
+  const phone = (contact.phone || "").replace(/[^0-9]/g, "");
+  if (phone) {
+    window.open(`https://wa.me/${phone}`, "_blank");
+  } else {
+    alert("Telefon numarası bulunamadı");
+  }
+}}
                 >
                   WhatsApp
                 </button>
@@ -125,7 +168,6 @@ export default function ContactPage() {
                   <div className="aspect-[16/9] w-full bg-gradient-to-b from-slate-100 to-slate-200" />
                 )}
               </div>
-
             </div>
 
             <div className="rounded-3xl border bg-slate-50 p-6">
@@ -141,27 +183,56 @@ export default function ContactPage() {
           {/* RIGHT: form */}
           <div className="rounded-3xl border p-6">
             <div className="text-lg font-semibold">Mesaj Gönder</div>
-            
+
+            {msg && (
+              <div
+                className={`mt-4 rounded-2xl border px-4 py-3 text-sm ${
+                  msg.includes("✅")
+                    ? "border-green-200 bg-green-50 text-green-800"
+                    : "border-red-200 bg-red-50 text-red-800"
+                }`}
+              >
+                {msg}
+              </div>
+            )}
 
             <div className="mt-5 grid gap-3">
-              <input className="w-full rounded-2xl border px-4 py-3" placeholder="Ad Soyad" />
-              <input className="w-full rounded-2xl border px-4 py-3" placeholder="E-posta" />
-              <input className="w-full rounded-2xl border px-4 py-3" placeholder="Telefon (opsiyonel)" />
-              <textarea className="w-full rounded-2xl border px-4 py-3" placeholder="Mesajınız" rows={5} />
-
-              <div className="rounded-2xl border bg-slate-50 p-4 text-xs text-slate-700">
-                Bot doğrulama alanı (placeholder)
-              </div>
+              <input
+                className="w-full rounded-2xl border px-4 py-3"
+                placeholder="Ad Soyad *"
+                value={formName}
+                onChange={(e) => setFormName(e.target.value)}
+              />
+              <input
+                type="email"
+                className="w-full rounded-2xl border px-4 py-3"
+                placeholder="E-posta *"
+                value={formEmail}
+                onChange={(e) => setFormEmail(e.target.value)}
+              />
+              <input
+                type="tel"
+                className="w-full rounded-2xl border px-4 py-3"
+                placeholder="Telefon (opsiyonel)"
+                value={formPhone}
+                onChange={(e) => setFormPhone(e.target.value)}
+              />
+              <textarea
+                className="w-full rounded-2xl border px-4 py-3"
+                placeholder="Mesajınız *"
+                rows={5}
+                value={formMessage}
+                onChange={(e) => setFormMessage(e.target.value)}
+              />
 
               <button
-                className="rounded-2xl bg-slate-900 px-5 py-3 text-sm font-medium text-white hover:bg-slate-800"
+                className="rounded-2xl bg-slate-900 px-5 py-3 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-60"
                 type="button"
-                onClick={() => alert("Demo: Mesaj gönderildi (simülasyon).")}
+                onClick={handleSubmit}
+                disabled={sending}
               >
-                Gönder
+                {sending ? "Gönderiliyor..." : "Gönder"}
               </button>
-
-              
             </div>
           </div>
         </div>

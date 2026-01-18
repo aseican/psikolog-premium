@@ -1,10 +1,15 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Container } from "@/components/layout/Container";
-import { services } from "@/lib/mock/site";
-import { defaultAvailability } from "@/lib/mock/availability";
-import { getSlotsForDate } from "@/lib/mock/slots";
+import { supabase } from "@/lib/supabase";
+
+type Service = {
+  id: string;
+  title: string;
+  description: string;
+  icon: string;
+};
 
 function todayISO() {
   const d = new Date();
@@ -14,8 +19,29 @@ function todayISO() {
   return `${yyyy}-${mm}-${dd}`;
 }
 
+// Basit slot generator (hafta içi 10:00-18:00)
+function generateSlots(dateStr: string): string[] {
+  const date = new Date(dateStr);
+  const dayOfWeek = date.getDay();
+  
+  // Cumartesi (6) ve Pazar (0) dolu
+  if (dayOfWeek === 0 || dayOfWeek === 6) {
+    return [];
+  }
+
+  const slots: string[] = [];
+  for (let h = 10; h < 18; h++) {
+    slots.push(`${String(h).padStart(2, "0")}:00`);
+    slots.push(`${String(h).padStart(2, "0")}:30`);
+  }
+  return slots;
+}
+
 export default function BookingPage() {
-  const [serviceId, setServiceId] = useState(services[0]?.id ?? "");
+  const [services, setServices] = useState<Service[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const [serviceId, setServiceId] = useState("");
   const [date, setDate] = useState(todayISO());
   const [time, setTime] = useState<string | null>(null);
 
@@ -26,13 +52,32 @@ export default function BookingPage() {
 
   const [otpStage, setOtpStage] = useState<"FORM" | "OTP" | "DONE">("FORM");
   const [otp, setOtp] = useState("");
+  const [generatedOtp, setGeneratedOtp] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    loadServices();
+  }, []);
+
+  async function loadServices() {
+    setLoading(true);
+    const { data } = await supabase
+      .from("services")
+      .select("id, title, description, icon")
+      .eq("is_active", true)
+      .order("order_index", { ascending: true });
+
+    setServices(data ?? []);
+    if (data && data.length > 0) {
+      setServiceId(data[0].id);
+    }
+    setLoading(false);
+  }
 
   const selectedService = services.find((s) => s.id === serviceId);
 
-  const slots = useMemo(
-    () => getSlotsForDate(date, defaultAvailability),
-    [date]
-  );
+  const slots = useMemo(() => generateSlots(date), [date]);
 
   const phoneDigits = phone.replace(/\D/g, "");
   const canSubmit =
@@ -44,14 +89,92 @@ export default function BookingPage() {
     email.includes("@") &&
     phoneDigits.length >= 10;
 
+  function handleCreateAppointment() {
+    setMsg(null);
+    
+    // Simüle edilmiş SMS OTP (gerçekte SMS API kullanılacak)
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    setGeneratedOtp(code);
+    
+    console.log("📱 SMS Gönderildi (DEMO):", code, "→", phone);
+    alert(`🔐 Demo OTP Kodu: ${code}\n(Gerçek sistemde SMS ile gelecek)`);
+    
+    setOtpStage("OTP");
+  }
+
+  async function handleVerifyOtp() {
+    setMsg(null);
+
+    if (otp.trim() !== generatedOtp) {
+      setMsg("❌ Doğrulama kodu hatalı!");
+      return;
+    }
+
+    setSaving(true);
+
+    const { error } = await supabase.from("appointments").insert([
+      {
+        name: fullName.trim(),
+        email: email.trim(),
+        phone: phone.trim(),
+        date: date,
+        time: time,
+        message: note.trim() || null,
+        status: "pending",
+      },
+    ]);
+
+    setSaving(false);
+
+    if (error) {
+      setMsg("Hata: " + error.message);
+    } else {
+      setOtpStage("DONE");
+    }
+  }
+
+  function resetForm() {
+    setOtpStage("FORM");
+    setOtp("");
+    setGeneratedOtp("");
+    setFullName("");
+    setEmail("");
+    setPhone("");
+    setNote("");
+    setTime(null);
+    setDate(todayISO());
+    setMsg(null);
+  }
+
+  if (loading) {
+    return (
+      <Container>
+        <section className="rounded-3xl border p-8">
+          <p className="text-slate-600">Yükleniyor...</p>
+        </section>
+      </Container>
+    );
+  }
+
   return (
     <Container>
       <section className="rounded-3xl border p-8">
         <h1 className="text-2xl font-semibold">Randevu Al</h1>
         <p className="mt-2 text-slate-700">
-          Aşağıdan uygun gün ve saat seçip randevu talebi oluşturabilirsiniz.
-          (Şimdilik demo akışı — backend bağlanınca Google Meet otomatikleşecek.)
+          Aşağıdan uygun gün ve saat seçip randevu talebinizi oluşturabilirsiniz.
         </p>
+
+        {msg && (
+          <div
+            className={`mt-4 rounded-2xl border px-4 py-3 text-sm ${
+              msg.includes("✅")
+                ? "border-green-200 bg-green-50 text-green-800"
+                : "border-red-200 bg-red-50 text-red-800"
+            }`}
+          >
+            {msg}
+          </div>
+        )}
 
         <div className="mt-6 grid gap-6 lg:grid-cols-2">
           {/* LEFT: selection */}
@@ -65,7 +188,7 @@ export default function BookingPage() {
             >
               {services.map((s) => (
                 <option key={s.id} value={s.id}>
-                  {s.title} ({s.durationMin} dk)
+                  {s.icon} {s.title}
                 </option>
               ))}
             </select>
@@ -75,6 +198,7 @@ export default function BookingPage() {
               type="date"
               className="mt-3 w-full rounded-2xl border px-4 py-3"
               value={date}
+              min={todayISO()}
               onChange={(e) => {
                 setDate(e.target.value);
                 setTime(null);
@@ -85,7 +209,7 @@ export default function BookingPage() {
             <div className="mt-6 text-sm font-medium text-slate-700">Saat</div>
             {slots.length === 0 ? (
               <div className="mt-3 rounded-2xl border bg-slate-50 p-4 text-sm text-slate-700">
-                Bu tarihte uygun saat yok. Lütfen başka bir gün seçin.
+                Bu tarihte uygun saat yok (Hafta sonu kapalı). Lütfen hafta içi bir gün seçin.
               </div>
             ) : (
               <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-4">
@@ -114,9 +238,8 @@ export default function BookingPage() {
               </div>
             )}
 
-            <div className="mt-6 rounded-2xl border bg-slate-50 p-4 text-xs text-slate-700">
-              Bot doğrulama alanı (placeholder) — gerçek sistemde Turnstile/Recaptcha
-              eklenecek.
+            <div className="mt-6 rounded-2xl border bg-blue-50 p-4 text-xs text-slate-700">
+              🤖 <strong>Bot Koruması:</strong> Gerçek sistemde Cloudflare Turnstile veya reCAPTCHA entegre edilecek.
             </div>
           </div>
 
@@ -125,46 +248,48 @@ export default function BookingPage() {
             <div className="text-sm font-medium">Randevu Özeti</div>
             <div className="mt-3 rounded-2xl border bg-white p-4 text-sm">
               <div className="text-slate-600">Hizmet</div>
-              <div className="font-medium">{selectedService?.title ?? "-"}</div>
+              <div className="font-medium">
+                {selectedService?.icon} {selectedService?.title ?? "-"}
+              </div>
 
               <div className="mt-3 text-slate-600">Tarih / Saat</div>
               <div className="font-medium">
-                {date} {time ? `• ${time}` : ""}
+                {date} {time ? `• ${time}` : "• Saat seçilmedi"}
               </div>
 
               <div className="mt-3 text-slate-600">Süre</div>
-              <div className="font-medium">
-                {selectedService?.durationMin ?? "-"} dk
-              </div>
+              <div className="font-medium">50 dk (standart)</div>
             </div>
 
-            <div className="mt-6 text-sm font-medium text-slate-700">Bilgiler</div>
+            <div className="mt-6 text-sm font-medium text-slate-700">Bilgileriniz</div>
             <div className="mt-3 grid gap-3">
               <input
                 className="w-full rounded-2xl border px-4 py-3"
-                placeholder="Ad Soyad"
+                placeholder="Ad Soyad *"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
                 disabled={otpStage !== "FORM"}
               />
               <input
+                type="email"
                 className="w-full rounded-2xl border px-4 py-3"
-                placeholder="E-posta"
+                placeholder="E-posta *"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={otpStage !== "FORM"}
               />
               <input
+                type="tel"
                 className="w-full rounded-2xl border px-4 py-3"
-                placeholder="Telefon (5xx...)"
+                placeholder="Telefon (5xx xxx xx xx) *"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 disabled={otpStage !== "FORM"}
               />
               <textarea
                 className="w-full rounded-2xl border px-4 py-3"
-                placeholder="Not (opsiyonel)"
-                rows={4}
+                placeholder="Belirtmek istediğiniz bir not (opsiyonel)"
+                rows={3}
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
                 disabled={otpStage !== "FORM"}
@@ -181,89 +306,98 @@ export default function BookingPage() {
                       : "bg-slate-900/50 cursor-not-allowed",
                   ].join(" ")}
                   disabled={!canSubmit}
-                  onClick={() => setOtpStage("OTP")}
+                  onClick={handleCreateAppointment}
                 >
                   Randevu Oluştur
                 </button>
 
                 <p className="mt-2 text-xs text-slate-500">
-                  Devam ettiğinizde SMS doğrulama adımına geçersiniz. (Demo)
+                  Devam ettiğinizde SMS doğrulama adımına geçersiniz.
                 </p>
               </>
             )}
 
             {otpStage === "OTP" && (
-              <div className="mt-6 rounded-3xl border p-5">
-                <div className="text-sm font-medium">SMS Doğrulama</div>
+              <div className="mt-6 rounded-3xl border bg-slate-50 p-5">
+                <div className="text-sm font-medium">📱 SMS Doğrulama</div>
                 <p className="mt-2 text-sm text-slate-700">
-                  <b>{phone || "Telefon"}</b> numarasına 6 haneli doğrulama kodu
-                  gönderildi (demo).
+                  <strong>{phone}</strong> numarasına 6 haneli doğrulama kodu gönderildi.
                 </p>
 
-                <div className="mt-3 grid gap-3">
+                <div className="mt-4 grid gap-3">
                   <input
-                    className="w-full rounded-2xl border px-4 py-3"
-                    placeholder="6 haneli kod"
+                    className="w-full rounded-2xl border px-4 py-3 text-center text-lg tracking-widest"
+                    placeholder="000000"
+                    maxLength={6}
                     value={otp}
-                    onChange={(e) => setOtp(e.target.value)}
+                    onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
                   />
 
                   <button
-                    className="rounded-2xl bg-slate-900 px-5 py-3 text-sm font-medium text-white hover:bg-slate-800"
-                    onClick={() => {
-                      if (otp.trim().length < 4) {
-                        alert("Demo: Kod girin.");
-                        return;
-                      }
-                      setOtpStage("DONE");
-                    }}
+                    className="rounded-2xl bg-slate-900 px-5 py-3 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-60"
+                    onClick={handleVerifyOtp}
+                    disabled={saving || otp.length !== 6}
                   >
-                    Kodu Doğrula
+                    {saving ? "Kontrol ediliyor..." : "Kodu Doğrula"}
                   </button>
 
                   <button
-                    className="rounded-2xl border px-5 py-3 text-sm font-medium hover:bg-slate-50"
+                    className="rounded-2xl border px-5 py-3 text-sm font-medium hover:bg-white"
                     onClick={() => setOtpStage("FORM")}
                   >
-                    Geri dön
+                    ← Geri dön
                   </button>
                 </div>
 
-                <p className="mt-2 text-xs text-slate-500">
-                  Backend geldiğinde burada gerçek SMS sağlayıcısı (Twilio/Netgsm/İletiMerkezi)
-                  entegre edilecek.
+                <p className="mt-3 text-xs text-slate-500">
+                  💡 <strong>Demo modunda:</strong> Kod otomatik gösterildi. Gerçek sistemde SMS ile gelecek.
                 </p>
               </div>
             )}
 
             {otpStage === "DONE" && (
-              <div className="mt-6 rounded-3xl border bg-slate-50 p-5">
-                <div className="text-sm font-medium text-slate-900">
-                  ✅ Randevu Talebiniz Alındı
+              <div className="mt-6 rounded-3xl border bg-green-50 p-5">
+                <div className="text-lg font-semibold text-green-900">
+                  ✅ Randevu Talebiniz Alındı!
                 </div>
                 <p className="mt-2 text-sm text-slate-700">
-                  Seçtiğiniz tarih ve saat için randevu talebiniz oluşturuldu. Onay ve detaylar
-                  SMS/E-posta ile iletilecektir. (Demo)
+                  Randevunuz başarıyla oluşturuldu. Onay ve detaylar kısa süre içinde SMS ve
+                  e-posta ile iletilecektir.
                 </p>
 
+                <div className="mt-4 rounded-2xl border border-green-200 bg-white p-4 text-sm">
+                  <p className="font-medium">📋 Randevu Detayları:</p>
+                  <p className="mt-1">
+                    <strong>Hizmet:</strong> {selectedService?.title}
+                  </p>
+                  <p>
+                    <strong>Tarih:</strong> {date}
+                  </p>
+                  <p>
+                    <strong>Saat:</strong> {time}
+                  </p>
+                </div>
+
                 <button
-                  className="mt-4 rounded-2xl border px-5 py-3 text-sm font-medium hover:bg-white"
-                  onClick={() => {
-                    // reset
-                    setOtpStage("FORM");
-                    setOtp("");
-                  }}
+                  className="mt-4 w-full rounded-2xl border px-5 py-3 text-sm font-medium hover:bg-white"
+                  onClick={resetForm}
                 >
                   Yeni randevu oluştur
                 </button>
               </div>
             )}
-
-            <p className="mt-6 text-xs text-slate-500">
-              Sonraki adım: Bu akış backend’e bağlanıp çakışma kontrolü + Google Calendar etkinliği
-              + Google Meet link üretimi yapacak.
-            </p>
           </div>
+        </div>
+
+        <div className="mt-8 rounded-3xl border bg-slate-50 p-6">
+          <p className="text-sm text-slate-700">
+            ℹ️ <strong>Bilgilendirme:</strong>
+          </p>
+          <ul className="mt-2 list-disc pl-5 text-sm text-slate-600">
+            <li>Randevu iptal/erteleme için en az 24 saat önceden bildirim yapılması rica edilir.</li>
+            <li>Online seanslar Google Meet üzerinden gerçekleştirilir (link SMS ile gelecek).</li>
+            <li>İlk seans değerlendirme amaçlıdır, devam planı birlikte belirlenir.</li>
+          </ul>
         </div>
       </section>
     </Container>
