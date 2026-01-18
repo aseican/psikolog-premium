@@ -1,13 +1,85 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import { Container } from "@/components/layout/Container";
+import { supabase } from "@/lib/supabase";
 
 type PersonKey = "p1" | "p2";
 
+type Person1 = {
+  name: string;
+  role: string;
+  image: string;
+  intro: string;
+  institutions: string[];
+  thesis: string;
+  experience: string;
+  approach: string[];
+  specializations: string[];
+  trainings: string[];
+  footer: string;
+};
+
+type Person2 = {
+  name: string;
+  role: string;
+  image: string;
+  content: string[];
+};
+
+type AboutData = {
+  person1: Person1;
+  person2: Person2;
+};
+
 export default function AboutPage() {
   const [active, setActive] = useState<PersonKey | null>("p1");
+  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState<AboutData | null>(null);
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  async function loadData() {
+    const { data: result } = await supabase
+      .from("cms_blocks")
+      .select("data")
+      .eq("key", "about")
+      .single();
+
+    if (result?.data) {
+      setData(result.data as AboutData);
+    }
+    setLoading(false);
+  }
+
+  if (loading) {
+    return (
+      <div className="bg-[var(--site-bg)]">
+        <Container>
+          <section className="py-20 text-center">
+            <p className="text-slate-600">Yükleniyor...</p>
+          </section>
+        </Container>
+      </div>
+    );
+  }
+
+  if (!data) {
+    return (
+      <div className="bg-[var(--site-bg)]">
+        <Container>
+          <section className="py-20 text-center">
+            <p className="text-slate-600">Sayfa bulunamadı.</p>
+          </section>
+        </Container>
+      </div>
+    );
+  }
+
+  const { person1, person2 } = data;
 
   return (
     <div className="bg-[var(--site-bg)]">
@@ -36,8 +108,8 @@ export default function AboutPage() {
               <div className="relative overflow-hidden">
                 <div className="relative aspect-[4/5] w-full">
                   <Image
-                    src="/images/eda-keklik.jpg"
-                    alt="Psikolog Eda Keklik Akalp"
+                    src={person1.image}
+                    alt={person1.name}
                     fill
                     className="object-cover transition duration-500 group-hover:scale-[1.03]"
                     priority
@@ -53,9 +125,9 @@ export default function AboutPage() {
 
               <div className="p-5">
                 <div className="text-lg font-semibold text-slate-900">
-                  Psikolog Eda Keklik Akalp
+                  {person1.name}
                 </div>
-                <div className="mt-1 text-sm text-slate-600">Bireysel Danışmanlık</div>
+                <div className="mt-1 text-sm text-slate-600">{person1.role}</div>
               </div>
             </button>
 
@@ -83,8 +155,8 @@ export default function AboutPage() {
               </div>
 
               <div className="p-5">
-                <div className="text-lg font-semibold text-slate-900">Psikolojik Danışman</div>
-                <div className="mt-1 text-sm text-slate-600">Ergen & Aile Danışmanlığı</div>
+                <div className="text-lg font-semibold text-slate-900">{person2.name}</div>
+                <div className="mt-1 text-sm text-slate-600">{person2.role}</div>
               </div>
             </button>
           </div>
@@ -101,16 +173,16 @@ export default function AboutPage() {
                   {active === "p1" ? (
                     <>
                       <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
-                        Psikolog Eda Keklik Akalp
+                        {person1.name}
                       </h2>
-                      <p className="mt-2 text-sm text-slate-600">Bireysel Danışmanlık</p>
+                      <p className="mt-2 text-sm text-slate-600">{person1.role}</p>
                     </>
                   ) : (
                     <>
                       <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
-                        Psikolojik Danışman
+                        {person2.name}
                       </h2>
-                      <p className="mt-2 text-sm text-slate-600">Ergen & Aile Danışmanlığı</p>
+                      <p className="mt-2 text-sm text-slate-600">{person2.role}</p>
                     </>
                   )}
                 </div>
@@ -126,94 +198,75 @@ export default function AboutPage() {
 
               {active === "p1" && (
                 <>
-                  <p className="mt-6 max-w-3xl text-slate-700">
-                    Psikolog Eda Keklik Akalp, İstanbul Kent Üniversitesi Psikoloji Bölümü’nden{" "}
-                    <b>onur derecesiyle</b> mezun olmuştur (3.42 AGNO). Lisans eğitimi boyunca akademik
-                    başarısının yanı sıra; rehabilitasyon merkezleri, hastane, dershane, anaokulu ve çeşitli
-                    özel kliniklerde kapsamlı staj deneyimleri edinmiştir.
-                  </p>
+                  <p
+                    className="mt-6 max-w-3xl text-slate-700"
+                    dangerouslySetInnerHTML={{ __html: person1.intro }}
+                  />
 
                   <div className="mt-6 max-w-3xl rounded-2xl border border-slate-200/70 bg-white/70 p-5 shadow-sm">
-                    <div className="text-sm font-medium text-slate-900">Lisans Döneminde Görev Aldığı Kurumlar</div>
+                    <div className="text-sm font-medium text-slate-900">
+                      Lisans Döneminde Görev Aldığı Kurumlar
+                    </div>
                     <ul className="mt-3 list-disc pl-5 text-sm text-slate-700">
-                      <li>Ayna Psikolojik Danışmanlık Merkezi</li>
-                      <li>Erk Danışmanlık Merkezi</li>
-                      <li>Hay Danışmanlık Merkezi</li>
-                      <li>Şişli VIP Final Eğitim Kurumları</li>
-                      <li>Ada Psikoloji Eğitim ve Danışmanlık Merkezi</li>
+                      {person1.institutions.map((inst, i) => (
+                        <li key={i}>{inst}</li>
+                      ))}
                     </ul>
                   </div>
 
-                  <p className="mt-6 max-w-3xl text-slate-700">
-                    Bitirme tezini,{" "}
-                    <b>
-                      “Lise Öğrencilerinin Madde Bağımlılığı ile İlgili Bilgi ve Farkındalık Düzeyi ile Bağımlılık
-                      Yapıcı Maddelere Karşı Tutumlarının İncelenmesi”
-                    </b>{" "}
-                    başlığıyla tamamlamıştır.
-                  </p>
+                  <p
+                    className="mt-6 max-w-3xl text-slate-700"
+                    dangerouslySetInnerHTML={{ __html: person1.thesis }}
+                  />
 
-                  <p className="mt-4 max-w-3xl text-slate-700">
-                    Mezuniyetinin ardından Bahçeşehir Dora Özel Eğitim ve Rehabilitasyon Merkezi ile Cebeci Özel
-                    Eğitim ve Rehabilitasyon Merkezi’nde aktif olarak kurum psikoloğu olarak görev yapmıştır.
-                  </p>
+                  <p className="mt-4 max-w-3xl text-slate-700">{person1.experience}</p>
 
-                  <p className="mt-6 max-w-3xl text-slate-700">
-                    Psikolog Eda Keklik Akalp, her bireyin kendini güvenle ifade edebileceği bir alan yaratmayı
-                    önemser. Psikolojik destek sürecinde bireylerin içsel güçlerini keşfetmelerine ve
-                    yaşamlarındaki zorluklarla baş etme becerilerini geliştirmelerine eşlik etmektedir.
-                  </p>
-
-                  <p className="mt-4 max-w-3xl text-slate-700">
-                    Danışmanlık süreçlerinde <b>güven, anlayış ve tarafsızlık</b> ilkelerine bağlı kalarak; bireyin
-                    kendini tanıma yolculuğunda, kaygılarının ötesindeki potansiyeline ulaşmasını amaçlamaktadır.
-                  </p>
+                  {person1.approach.map((text, i) => (
+                    <p
+                      key={i}
+                      className="mt-6 max-w-3xl text-slate-700"
+                      dangerouslySetInnerHTML={{ __html: text }}
+                    />
+                  ))}
 
                   <div className="mt-8 grid gap-4 md:grid-cols-2">
                     <div className="rounded-2xl border border-slate-200/70 bg-white/70 p-5 shadow-sm">
-                      <div className="text-sm font-medium text-slate-900">Uzmanlık Alanları</div>
+                      <div className="text-sm font-medium text-slate-900">
+                        Uzmanlık Alanları
+                      </div>
                       <ul className="mt-3 list-disc pl-5 text-sm text-slate-700">
-                        <li>Bireysel Terapi</li>
-                        <li>Aile ve Çift Terapisi</li>
-                        <li>Çocuk ve Ergen Terapisi</li>
-                        <li>Oyun Terapisi</li>
-                        <li>Cinsel Terapi</li>
+                        {person1.specializations.map((spec, i) => (
+                          <li key={i}>{spec}</li>
+                        ))}
                       </ul>
                     </div>
 
                     <div className="rounded-2xl border border-slate-200/70 bg-white/70 p-5 shadow-sm">
-                      <div className="text-sm font-medium text-slate-900">Uygulayıcı Eğitimleri</div>
+                      <div className="text-sm font-medium text-slate-900">
+                        Uygulayıcı Eğitimleri
+                      </div>
                       <ul className="mt-3 list-disc pl-5 text-sm text-slate-700">
-                        <li>Bilişsel Davranışçı Terapi (BDT)</li>
-                        <li>Aile Danışmanlığı</li>
-                        <li>İlişki ve Evlilik Danışmanlığı</li>
-                        <li>Cinsel Terapi</li>
-                        <li>Oyun Terapisi</li>
-                        <li>Çocuk Merkezli Oyun Terapisi</li>
-                        <li>Deneyimsel Oyun Terapisi</li>
+                        {person1.trainings.map((training, i) => (
+                          <li key={i}>{training}</li>
+                        ))}
                       </ul>
                     </div>
                   </div>
 
-                  <p className="mt-6 max-w-3xl text-slate-700">
-                    Ayrıca <b>Aile Danışmanlığı Eğitimini</b> tamamlamış olup bu alanda da danışmanlık hizmeti
-                    vermektedir. Halihazırda danışan kabulünü <b>Başakşehir Sevgi Danışmanlık Merkezi</b> üzerinden
-                    sürdürmektedir.
-                  </p>
+                  <p
+                    className="mt-6 max-w-3xl text-slate-700"
+                    dangerouslySetInnerHTML={{ __html: person1.footer }}
+                  />
                 </>
               )}
 
               {active === "p2" && (
                 <>
-                  <p className="mt-6 max-w-3xl text-slate-700">
-                    Psikolojik danışmanlık alanında eğitim aldıktan sonra, ergen ve aile danışmanlığı üzerine
-                    çalışmaya başladım. Süreçlerde aileyi ve bireyi birlikte ele alan bir yaklaşım benimsiyorum.
-                  </p>
-
-                  <p className="mt-4 max-w-3xl text-slate-700">
-                    Akademik stres, kimlik gelişimi, aile içi iletişim ve ilişki dinamikleri temel çalışma
-                    alanlarım arasında yer alır. Seanslar danışanın ihtiyaçlarına göre yapılandırılır.
-                  </p>
+                  {person2.content.map((text, i) => (
+                    <p key={i} className="mt-6 max-w-3xl text-slate-700">
+                      {text}
+                    </p>
+                  ))}
                 </>
               )}
             </div>

@@ -74,6 +74,10 @@ p {
     filter: blur(0);
   }
 }
+/* globals.css */
+.grecaptcha-badge {
+  visibility: hidden !important;
+}
 
 .animate-heroFadeUp {
   animation: heroFadeUp 520ms ease-out both;

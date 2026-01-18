@@ -28,8 +28,10 @@ export async function getHero() {
 export async function getHeroWords() {
   const hero = await getHero();
   const words = hero?.words ?? [];
-  return Array.isArray(words) ? words : [];
+  // Boş string'leri filtrele
+  return Array.isArray(words) ? words.filter((w: string) => w && w.trim()) : [];
 }
+
 
 /**
  * SERVICES

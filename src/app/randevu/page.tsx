@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Container } from "@/components/layout/Container";
 import { supabase } from "@/lib/supabase";
+
 
 type Service = {
   id: string;
@@ -10,6 +11,14 @@ type Service = {
   description: string;
   icon: string;
 };
+
+type Settings = {
+  recaptchaEnabled?: boolean;
+  recaptchaSiteKey?: string;
+  phoneVerificationRequired?: boolean;
+};
+
+type OtpStage = "FORM" | "OTP" | "DONE";
 
 function todayISO() {
   const d = new Date();
@@ -19,27 +28,72 @@ function todayISO() {
   return `${yyyy}-${mm}-${dd}`;
 }
 
-// Basit slot generator (hafta içi 10:00-18:00)
-function generateSlots(dateStr: string): string[] {
-  const date = new Date(dateStr);
-  const dayOfWeek = date.getDay();
-  
-  // Cumartesi (6) ve Pazar (0) dolu
-  if (dayOfWeek === 0 || dayOfWeek === 6) {
-    return [];
+// Çalışma saatlerine göre slot üretici
+async function getAvailableSlots(
+  date: string,
+  workingHours: any,
+  holidays: string[]
+): Promise<string[]> {
+  const dateObj = new Date(date);
+  const dayOfWeek = dateObj.getDay();
+
+  // Tatil günü kontrolü
+  if (holidays.includes(date)) return [];
+
+  // Gün adını al (monday, tuesday, ...)
+  const dayNames = [
+    "sunday",
+    "monday",
+    "tuesday",
+    "wednesday",
+    "thursday",
+    "friday",
+    "saturday",
+  ];
+  const dayName = dayNames[dayOfWeek];
+
+  const daySchedule = workingHours[dayName];
+
+  // Gün kapalıysa
+  if (!daySchedule || !daySchedule.enabled) return [];
+
+  // Slot üret
+  const slots: string[] = [];
+  const [startHour, startMin] = daySchedule.start.split(":").map(Number);
+  const [endHour, endMin] = daySchedule.end.split(":").map(Number);
+
+  let currentHour = startHour;
+  let currentMin = startMin;
+
+  while (
+    currentHour < endHour ||
+    (currentHour === endHour && currentMin < endMin)
+  ) {
+    slots.push(
+      `${String(currentHour).padStart(2, "0")}:${String(currentMin).padStart(
+        2,
+        "0"
+      )}`
+    );
+
+    currentMin += 30; // Her 30 dakikada bir slot
+    if (currentMin >= 60) {
+      currentMin = 0;
+      currentHour += 1;
+    }
   }
 
-  const slots: string[] = [];
-  for (let h = 10; h < 18; h++) {
-    slots.push(`${String(h).padStart(2, "0")}:00`);
-    slots.push(`${String(h).padStart(2, "0")}:30`);
-  }
   return slots;
 }
 
+const SITE_KEY = "6LdKcU4sAAAAAOUpFGWjAHYrVMZx5vXtEczDTPiY";
+
 export default function BookingPage() {
   const [services, setServices] = useState<Service[]>([]);
+  const [settings, setSettings] = useState<Settings | null>(null);
+
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
   const [serviceId, setServiceId] = useState("");
   const [date, setDate] = useState(todayISO());
@@ -50,66 +104,240 @@ export default function BookingPage() {
   const [phone, setPhone] = useState("");
   const [note, setNote] = useState("");
 
-  const [otpStage, setOtpStage] = useState<"FORM" | "OTP" | "DONE">("FORM");
+  const [otpStage, setOtpStage] = useState<OtpStage>("FORM");
   const [otp, setOtp] = useState("");
-  const [generatedOtp, setGeneratedOtp] = useState("");
-  const [saving, setSaving] = useState(false);
+  const [sendingCode, setSendingCode] = useState(false);
+
   const [msg, setMsg] = useState<string | null>(null);
 
+  // Çalışma saatleri ve tatil günleri
+  const [workingHours, setWorkingHours] = useState<any>({});
+  const [holidays, setHolidays] = useState<string[]>([]);
+  const [slots, setSlots] = useState<string[]>([]);
+
+  // reCAPTCHA script yükle
   useEffect(() => {
-    loadServices();
+    if (document.getElementById("recaptcha-script")) return;
+
+    const script = document.createElement("script");
+    script.id = "recaptcha-script";
+    script.src = `https://www.google.com/recaptcha/api.js?render=${SITE_KEY}`;
+    script.async = true;
+    script.onerror = () => {
+      console.warn("reCAPTCHA script yüklenemedi");
+    };
+    document.head.appendChild(script);
   }, []);
 
-  async function loadServices() {
-    setLoading(true);
-    const { data } = await supabase
-      .from("services")
-      .select("id, title, description, icon")
-      .eq("is_active", true)
-      .order("order_index", { ascending: true });
+  // ---------- INITIAL LOAD ----------
+  useEffect(() => {
+    async function loadAll() {
+      setLoading(true);
 
-    setServices(data ?? []);
-    if (data && data.length > 0) {
-      setServiceId(data[0].id);
+      // Hizmetler
+      const { data: servicesData } = await supabase
+        .from("services")
+        .select("id, title, description, icon")
+        .eq("is_active", true)
+        .order("order_index", { ascending: true });
+
+      setServices(servicesData ?? []);
+      if (servicesData && servicesData.length > 0) {
+        setServiceId(servicesData[0].id);
+      }
+
+      // Public settings
+      const res = await fetch("/api/settings");
+      if (res.ok) {
+        const json = await res.json();
+        setSettings(json);
+      } else {
+        setSettings({
+          recaptchaEnabled: false,
+          phoneVerificationRequired: false,
+        });
+      }
+
+      // Çalışma saatleri ve tatil günlerini al
+      const { data: fullSettings } = await supabase
+        .from("cms_blocks")
+        .select("data")
+        .eq("key", "settings")
+        .single();
+
+      if (fullSettings?.data) {
+        setWorkingHours(fullSettings.data.workingHours || {});
+        setHolidays(fullSettings.data.holidays || []);
+      }
+
+      setLoading(false);
     }
-    setLoading(false);
-  }
+
+    loadAll();
+  }, []);
+
+  // Tarih değiştiğinde slotları güncelle
+  useEffect(() => {
+    if (date && Object.keys(workingHours).length > 0) {
+      getAvailableSlots(date, workingHours, holidays).then(setSlots);
+    }
+  }, [date, workingHours, holidays]);
 
   const selectedService = services.find((s) => s.id === serviceId);
 
-  const slots = useMemo(() => generateSlots(date), [date]);
-
   const phoneDigits = phone.replace(/\D/g, "");
-  const canSubmit =
+  const canSubmitForm =
     otpStage === "FORM" &&
-    Boolean(selectedService) &&
-    Boolean(date) &&
-    Boolean(time) &&
+    !!selectedService &&
+    !!date &&
+    !!time &&
     fullName.trim().length >= 3 &&
     email.includes("@") &&
     phoneDigits.length >= 10;
 
-  function handleCreateAppointment() {
-    setMsg(null);
-    
-    // Simüle edilmiş SMS OTP (gerçekte SMS API kullanılacak)
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
-    setGeneratedOtp(code);
-    
-    console.log("📱 SMS Gönderildi (DEMO):", code, "→", phone);
-    alert(`🔐 Demo OTP Kodu: ${code}\n(Gerçek sistemde SMS ile gelecek)`);
-    
-    setOtpStage("OTP");
+  const phoneVerificationRequired = settings?.phoneVerificationRequired ?? false;
+  const recaptchaEnabled = settings?.recaptchaEnabled ?? false;
+  const recaptchaSiteKey = settings?.recaptchaSiteKey || SITE_KEY;
+
+  // ---------- reCAPTCHA TOKEN ÜRET ----------
+  async function runRecaptcha(action: string) {
+    if (!recaptchaEnabled || !recaptchaSiteKey) {
+      return { ok: true };
+    }
+
+    if (!window.grecaptcha) {
+      console.warn("reCAPTCHA henüz hazır değil, dev modda atlanıyor");
+      return { ok: true };
+    }
+
+    try {
+      const token = await new Promise<string>((resolve, reject) => {
+        window.grecaptcha!.ready(async () => {
+          try {
+            const t = await window.grecaptcha!.execute(recaptchaSiteKey, {
+              action,
+            });
+            resolve(t);
+          } catch (e) {
+            reject(e);
+          }
+        });
+      });
+
+      const verifyRes = await fetch("/api/verify-recaptcha", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token }),
+      });
+
+      if (!verifyRes.ok) {
+        const j = await verifyRes.json().catch(() => ({}));
+        return { ok: false, error: j.error || "Bot koruması doğrulanamadı" };
+      }
+
+      return { ok: true };
+    } catch (error: any) {
+      return { ok: false, error: error.message || "reCAPTCHA hatası" };
+    }
   }
 
-  async function handleVerifyOtp() {
+  // ---------- 1) FORM SUBMIT -> OTP GÖNDER ----------
+  async function handleCreateAppointment() {
     setMsg(null);
 
-    if (otp.trim() !== generatedOtp) {
-      setMsg("❌ Doğrulama kodu hatalı!");
+    // Bot kontrolü
+    const captcha = await runRecaptcha("appointment_create");
+    if (!captcha.ok) {
+      setMsg(
+        "⚠️ " +
+          (captcha.error ||
+            "Güvenlik doğrulaması başarısız. Lütfen tekrar deneyin.")
+      );
       return;
     }
 
+    // Telefon doğrulama zorunlu değilse direkt randevu kaydet
+    if (!phoneVerificationRequired) {
+      await createAppointment();
+      return;
+    }
+
+    // SMS doğrulama
+    try {
+      setSendingCode(true);
+
+      const res = await fetch("/api/send-verification", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone }),
+      });
+
+      const json = await res.json();
+
+      if (!res.ok) {
+        setMsg("SMS gönderilemedi: " + (json.error || "Bilinmeyen hata"));
+        setSendingCode(false);
+        return;
+      }
+
+      setOtpStage("OTP");
+      setMsg("📱 Doğrulama kodu telefonunuza gönderildi.");
+    } catch (error: any) {
+      setMsg("SMS hatası: " + error.message);
+    } finally {
+      setSendingCode(false);
+    }
+  }
+
+  // ---------- 2) OTP DOĞRULAMA ----------
+  async function handleVerifyOtp() {
+    setMsg(null);
+
+    if (otp.trim().length !== 6) {
+      setMsg("Lütfen 6 haneli kodu girin.");
+      return;
+    }
+
+    // Bot kontrolü (isteğe bağlı)
+    const captcha = await runRecaptcha("otp_verify");
+    if (!captcha.ok) {
+      setMsg(
+        "⚠️ " +
+          (captcha.error ||
+            "Güvenlik doğrulaması başarısız. Lütfen tekrar deneyin.")
+      );
+      return;
+    }
+
+    setSaving(true);
+
+    try {
+      const res = await fetch("/api/verify-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone, code: otp }),
+      });
+
+      const json = await res.json();
+      if (!res.ok) {
+        setMsg(
+          "❌ " +
+            (json.error || "Doğrulama kodu hatalı veya süresi dolmuş.")
+        );
+        setSaving(false);
+        return;
+      }
+
+      // SMS doğrulandı -> randevuyu kaydet
+      await createAppointment();
+    } catch (error: any) {
+      setMsg("Hata: " + error.message);
+      setSaving(false);
+    }
+  }
+
+  // ---------- DB'YE RANDEVU KAYDI + BİLDİRİM ----------
+  async function createAppointment() {
     setSaving(true);
 
     const { error } = await supabase.from("appointments").insert([
@@ -117,26 +345,47 @@ export default function BookingPage() {
         name: fullName.trim(),
         email: email.trim(),
         phone: phone.trim(),
-        date: date,
-        time: time,
+        date,
+        time,
         message: note.trim() || null,
         status: "pending",
+        service_id: serviceId || null,
       },
     ]);
 
-    setSaving(false);
-
     if (error) {
+      setSaving(false);
       setMsg("Hata: " + error.message);
-    } else {
-      setOtpStage("DONE");
+      return;
     }
+
+    // Bildirim (mail + sms) – backend endpoint'i üzerinden
+    try {
+      await fetch("/api/send-notification", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "appointment_confirmation",
+          to: { email, phone, name: fullName.trim() },
+          appointment: {
+            date,
+            time,
+            service: selectedService?.title ?? "",
+          },
+        }),
+      });
+    } catch {
+      // Bildirim hatası randevuyu bozmasın
+    }
+
+    setSaving(false);
+    setOtpStage("DONE");
+    setMsg("✅ Randevu talebiniz alındı.");
   }
 
   function resetForm() {
     setOtpStage("FORM");
     setOtp("");
-    setGeneratedOtp("");
     setFullName("");
     setEmail("");
     setPhone("");
@@ -146,6 +395,7 @@ export default function BookingPage() {
     setMsg(null);
   }
 
+  // ---------- RENDER ----------
   if (loading) {
     return (
       <Container>
@@ -167,8 +417,10 @@ export default function BookingPage() {
         {msg && (
           <div
             className={`mt-4 rounded-2xl border px-4 py-3 text-sm ${
-              msg.includes("✅")
+              msg.startsWith("✅") || msg.includes("talebiniz alındı")
                 ? "border-green-200 bg-green-50 text-green-800"
+                : msg.startsWith("📱") || msg.startsWith("⚠️")
+                ? "border-amber-200 bg-amber-50 text-amber-800"
                 : "border-red-200 bg-red-50 text-red-800"
             }`}
           >
@@ -177,7 +429,7 @@ export default function BookingPage() {
         )}
 
         <div className="mt-6 grid gap-6 lg:grid-cols-2">
-          {/* LEFT: selection */}
+          {/* LEFT: seçimler */}
           <div className="rounded-3xl border p-6">
             <div className="text-sm font-medium text-slate-700">Hizmet</div>
             <select
@@ -209,7 +461,7 @@ export default function BookingPage() {
             <div className="mt-6 text-sm font-medium text-slate-700">Saat</div>
             {slots.length === 0 ? (
               <div className="mt-3 rounded-2xl border bg-slate-50 p-4 text-sm text-slate-700">
-                Bu tarihte uygun saat yok (Hafta sonu kapalı). Lütfen hafta içi bir gün seçin.
+                Bu tarihte uygun saat yok. Lütfen başka bir tarih seçin.
               </div>
             ) : (
               <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-4">
@@ -223,11 +475,9 @@ export default function BookingPage() {
                       disabled={otpStage !== "FORM"}
                       className={[
                         "rounded-2xl border px-3 py-2 text-center text-sm transition",
-                        active
-                          ? "bg-slate-900 text-white"
-                          : "hover:bg-slate-50",
+                        active ? "bg-slate-900 text-white" : "hover:bg-slate-50",
                         otpStage !== "FORM"
-                          ? "opacity-50 cursor-not-allowed"
+                          ? "cursor-not-allowed opacity-50"
                           : "",
                       ].join(" ")}
                     >
@@ -238,12 +488,16 @@ export default function BookingPage() {
               </div>
             )}
 
-            <div className="mt-6 rounded-2xl border bg-blue-50 p-4 text-xs text-slate-700">
-              🤖 <strong>Bot Koruması:</strong> Gerçek sistemde Cloudflare Turnstile veya reCAPTCHA entegre edilecek.
-            </div>
+            {recaptchaEnabled && (
+              <div className="mt-6 rounded-2xl border bg-blue-50 p-4 text-xs text-slate-700">
+                🤖 <strong>Bot Koruması:</strong> Bu form Google reCAPTCHA v3
+                ile korunmaktadır. Gizlilik Politikası ve Kullanım Şartları
+                Google tarafından sağlanır.
+              </div>
+            )}
           </div>
 
-          {/* RIGHT: form + summary */}
+          {/* RIGHT: özet + form */}
           <div className="rounded-3xl border p-6">
             <div className="text-sm font-medium">Randevu Özeti</div>
             <div className="mt-3 rounded-2xl border bg-white p-4 text-sm">
@@ -261,7 +515,9 @@ export default function BookingPage() {
               <div className="font-medium">50 dk (standart)</div>
             </div>
 
-            <div className="mt-6 text-sm font-medium text-slate-700">Bilgileriniz</div>
+            <div className="mt-6 text-sm font-medium text-slate-700">
+              Bilgileriniz
+            </div>
             <div className="mt-3 grid gap-3">
               <input
                 className="w-full rounded-2xl border px-4 py-3"
@@ -296,32 +552,38 @@ export default function BookingPage() {
               />
             </div>
 
+            {/* FORM aşaması */}
             {otpStage === "FORM" && (
               <>
                 <button
                   className={[
                     "mt-6 w-full rounded-2xl px-5 py-3 text-sm font-medium text-white transition",
-                    canSubmit
+                    canSubmitForm && !sendingCode
                       ? "bg-slate-900 hover:bg-slate-800"
-                      : "bg-slate-900/50 cursor-not-allowed",
+                      : "cursor-not-allowed bg-slate-900/50",
                   ].join(" ")}
-                  disabled={!canSubmit}
+                  disabled={!canSubmitForm || sendingCode}
                   onClick={handleCreateAppointment}
+                  type="button"
                 >
-                  Randevu Oluştur
+                  {sendingCode ? "Kod gönderiliyor..." : "Randevu Oluştur"}
                 </button>
 
-                <p className="mt-2 text-xs text-slate-500">
-                  Devam ettiğinizde SMS doğrulama adımına geçersiniz.
-                </p>
+                {phoneVerificationRequired && (
+                  <p className="mt-2 text-xs text-slate-500">
+                    Devam ettiğinizde SMS doğrulama adımına geçersiniz.
+                  </p>
+                )}
               </>
             )}
 
+            {/* OTP aşaması */}
             {otpStage === "OTP" && (
               <div className="mt-6 rounded-3xl border bg-slate-50 p-5">
                 <div className="text-sm font-medium">📱 SMS Doğrulama</div>
                 <p className="mt-2 text-sm text-slate-700">
-                  <strong>{phone}</strong> numarasına 6 haneli doğrulama kodu gönderildi.
+                  <strong>{phone}</strong> numarasına 6 haneli doğrulama kodu
+                  gönderildi.
                 </p>
 
                 <div className="mt-4 grid gap-3">
@@ -330,39 +592,48 @@ export default function BookingPage() {
                     placeholder="000000"
                     maxLength={6}
                     value={otp}
-                    onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
+                    onChange={(e) =>
+                      setOtp(e.target.value.replace(/\D/g, ""))
+                    }
                   />
 
                   <button
                     className="rounded-2xl bg-slate-900 px-5 py-3 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-60"
                     onClick={handleVerifyOtp}
                     disabled={saving || otp.length !== 6}
+                    type="button"
                   >
                     {saving ? "Kontrol ediliyor..." : "Kodu Doğrula"}
                   </button>
 
                   <button
                     className="rounded-2xl border px-5 py-3 text-sm font-medium hover:bg-white"
-                    onClick={() => setOtpStage("FORM")}
+                    onClick={() => {
+                      setOtpStage("FORM");
+                      setOtp("");
+                    }}
+                    type="button"
                   >
                     ← Geri dön
                   </button>
                 </div>
 
                 <p className="mt-3 text-xs text-slate-500">
-                  💡 <strong>Demo modunda:</strong> Kod otomatik gösterildi. Gerçek sistemde SMS ile gelecek.
+                  Kod 5 dakika boyunca geçerlidir. Ulaşmazsa numaranızı kontrol
+                  edip tekrar deneyebilirsiniz.
                 </p>
               </div>
             )}
 
+            {/* TAMAMLANDI */}
             {otpStage === "DONE" && (
               <div className="mt-6 rounded-3xl border bg-green-50 p-5">
                 <div className="text-lg font-semibold text-green-900">
                   ✅ Randevu Talebiniz Alındı!
                 </div>
                 <p className="mt-2 text-sm text-slate-700">
-                  Randevunuz başarıyla oluşturuldu. Onay ve detaylar kısa süre içinde SMS ve
-                  e-posta ile iletilecektir.
+                  Randevunuz başarıyla oluşturuldu. Onay ve detaylar kısa süre
+                  içinde SMS ve e-posta ile iletilecektir.
                 </p>
 
                 <div className="mt-4 rounded-2xl border border-green-200 bg-white p-4 text-sm">
@@ -381,6 +652,7 @@ export default function BookingPage() {
                 <button
                   className="mt-4 w-full rounded-2xl border px-5 py-3 text-sm font-medium hover:bg-white"
                   onClick={resetForm}
+                  type="button"
                 >
                   Yeni randevu oluştur
                 </button>
@@ -394,9 +666,18 @@ export default function BookingPage() {
             ℹ️ <strong>Bilgilendirme:</strong>
           </p>
           <ul className="mt-2 list-disc pl-5 text-sm text-slate-600">
-            <li>Randevu iptal/erteleme için en az 24 saat önceden bildirim yapılması rica edilir.</li>
-            <li>Online seanslar Google Meet üzerinden gerçekleştirilir (link SMS ile gelecek).</li>
-            <li>İlk seans değerlendirme amaçlıdır, devam planı birlikte belirlenir.</li>
+            <li>
+              Randevu iptal/erteleme için en az 24 saat önceden bildirim
+              yapılması rica edilir.
+            </li>
+            <li>
+              Online seanslar Google Meet üzerinden gerçekleştirilir (link SMS
+              veya e-posta ile gelir).
+            </li>
+            <li>
+              İlk seans değerlendirme amaçlıdır, devam planı birlikte
+              belirlenir.
+            </li>
           </ul>
         </div>
       </section>
