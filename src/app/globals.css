@@ -82,3 +82,10 @@ p {
 .animate-heroFadeUp {
   animation: heroFadeUp 520ms ease-out both;
 }
+
+/* Signature/Logo font styling */
+.font-signature {
+  font-family: var(--font-parisienne), 'Parisienne', cursive;
+  font-weight: 400;
+  font-style: normal;
+}

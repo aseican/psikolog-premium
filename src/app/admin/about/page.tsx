@@ -17,11 +17,18 @@ type Person1 = {
   footer: string;
 };
 
+type ServiceItem = {
+  title: string;
+  description: string;
+};
+
 type Person2 = {
   name: string;
   role: string;
   image: string;
-  content: string[];
+  intro: string;
+  services: ServiceItem[];
+  applications: ServiceItem[];
 };
 
 type AboutData = {
@@ -46,8 +53,10 @@ const DEFAULT_DATA: AboutData = {
   person2: {
     name: "Psikolojik Danışman",
     role: "Ergen & Aile Danışmanlığı",
-    image: "",
-    content: [],
+    image: "/images/nurda-keklik.jpeg",
+    intro: "",
+    services: [],
+    applications: [],
   },
 };
 
@@ -198,11 +207,10 @@ export default function AdminAboutPage() {
           <div className="flex items-center gap-3">
             {message && (
               <span
-                className={`rounded-lg px-3 py-1 text-sm ${
-                  message.type === "success"
-                    ? "bg-green-100 text-green-700"
-                    : "bg-red-100 text-red-700"
-                }`}
+                className={`rounded-lg px-3 py-1 text-sm ${message.type === "success"
+                  ? "bg-green-100 text-green-700"
+                  : "bg-red-100 text-red-700"
+                  }`}
               >
                 {message.text}
               </span>
@@ -223,21 +231,19 @@ export default function AdminAboutPage() {
         <div className="flex gap-2">
           <button
             onClick={() => setActiveTab("p1")}
-            className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
-              activeTab === "p1"
-                ? "bg-slate-900 text-white"
-                : "bg-white text-slate-700 hover:bg-slate-100"
-            }`}
+            className={`rounded-lg px-4 py-2 text-sm font-medium transition ${activeTab === "p1"
+              ? "bg-slate-900 text-white"
+              : "bg-white text-slate-700 hover:bg-slate-100"
+              }`}
           >
             👤 Kişi 1 ({data.person1.name})
           </button>
           <button
             onClick={() => setActiveTab("p2")}
-            className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
-              activeTab === "p2"
-                ? "bg-slate-900 text-white"
-                : "bg-white text-slate-700 hover:bg-slate-100"
-            }`}
+            className={`rounded-lg px-4 py-2 text-sm font-medium transition ${activeTab === "p2"
+              ? "bg-slate-900 text-white"
+              : "bg-white text-slate-700 hover:bg-slate-100"
+              }`}
           >
             👤 Kişi 2 ({data.person2.name})
           </button>
@@ -377,14 +383,29 @@ export default function AdminAboutPage() {
               </div>
             </Card>
 
-            <Card title="İçerik Paragrafları">
-              <ArrayEditor
-                items={data.person2.content}
-                onAdd={(v) => addToArray("p2", "content", v)}
-                onRemove={(i) => removeFromArray("p2", "content", i)}
-                onUpdate={(i, v) => updateArrayItem("p2", "content", i, v)}
-                placeholder="Paragraf metni"
-                isTextarea
+            <Card title="Giriş Metni">
+              <textarea
+                value={data.person2.intro}
+                onChange={(e) => updateP2("intro", e.target.value)}
+                rows={4}
+                className="w-full rounded-lg border px-4 py-2.5 text-sm"
+                placeholder="Danışanlarıma yaklaşımımız hakkında genel bilgi..."
+              />
+            </Card>
+
+            <Card title="Hizmetler">
+              <ServiceArrayEditor
+                items={data.person2.services}
+                onUpdate={(newItems) => updateP2("services", newItems)}
+                placeholder="Hizmet"
+              />
+            </Card>
+
+            <Card title="Uygulamalar / Testler">
+              <ServiceArrayEditor
+                items={data.person2.applications}
+                onUpdate={(newItems) => updateP2("applications", newItems)}
+                placeholder="Uygulama"
               />
             </Card>
           </div>
@@ -507,6 +528,90 @@ function ArrayEditor({
             className="flex-1 rounded-lg border px-3 py-2 text-sm"
           />
         )}
+        <button
+          onClick={handleAdd}
+          className="rounded-lg bg-slate-900 px-4 py-2 text-sm text-white hover:bg-slate-800"
+        >
+          Ekle
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function ServiceArrayEditor({
+  items,
+  onUpdate,
+  placeholder,
+}: {
+  items: { title: string; description: string }[];
+  onUpdate: (newItems: { title: string; description: string }[]) => void;
+  placeholder: string;
+}) {
+  const [newTitle, setNewTitle] = useState("");
+  const [newDescription, setNewDescription] = useState("");
+  const safeItems = items ?? [];
+
+  function handleAdd() {
+    if (newTitle.trim()) {
+      onUpdate([...safeItems, { title: newTitle.trim(), description: newDescription.trim() }]);
+      setNewTitle("");
+      setNewDescription("");
+    }
+  }
+
+  function handleRemove(index: number) {
+    onUpdate(safeItems.filter((_, i) => i !== index));
+  }
+
+  function handleUpdateItem(index: number, field: "title" | "description", value: string) {
+    onUpdate(safeItems.map((item, i) => (i === index ? { ...item, [field]: value } : item)));
+  }
+
+  return (
+    <div className="space-y-3">
+      {safeItems.map((item, i) => (
+        <div key={i} className="rounded-xl border bg-slate-50 p-4">
+          <div className="flex gap-2 mb-2">
+            <input
+              type="text"
+              value={item.title}
+              onChange={(e) => handleUpdateItem(i, "title", e.target.value)}
+              className="flex-1 rounded-lg border px-3 py-2 text-sm font-medium"
+              placeholder={`${placeholder} başlığı`}
+            />
+            <button
+              onClick={() => handleRemove(i)}
+              className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 hover:bg-red-100"
+            >
+              Sil
+            </button>
+          </div>
+          <textarea
+            value={item.description}
+            onChange={(e) => handleUpdateItem(i, "description", e.target.value)}
+            rows={2}
+            className="w-full rounded-lg border px-3 py-2 text-sm"
+            placeholder={`${placeholder} açıklaması`}
+          />
+        </div>
+      ))}
+
+      <div className="rounded-xl border border-dashed border-slate-300 p-4">
+        <input
+          type="text"
+          value={newTitle}
+          onChange={(e) => setNewTitle(e.target.value)}
+          placeholder={`Yeni ${placeholder.toLowerCase()} başlığı`}
+          className="w-full rounded-lg border px-3 py-2 text-sm mb-2"
+        />
+        <textarea
+          value={newDescription}
+          onChange={(e) => setNewDescription(e.target.value)}
+          placeholder={`${placeholder} açıklaması`}
+          rows={2}
+          className="w-full rounded-lg border px-3 py-2 text-sm mb-2"
+        />
         <button
           onClick={handleAdd}
           className="rounded-lg bg-slate-900 px-4 py-2 text-sm text-white hover:bg-slate-800"

@@ -91,7 +91,7 @@ export default function TestlerPage() {
     setAnswers({});
 
     const welcomeMsg = `Merhaba! ${type.name} için hazırlanmış sorularımız var. Cevapların kaydedilir ve değerlendirme için kullanılır. Başlayalım mı?`;
-    
+
     setMessages([
       { id: uid(), role: "bot", text: welcomeMsg },
       { id: uid(), role: "bot", text: data?.[0]?.question ?? "Soru yüklenemedi" },
@@ -243,7 +243,7 @@ export default function TestlerPage() {
               href="/randevu"
               className="rounded-2xl bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
             >
-              Randevu Al
+              Randevu Oluştur
             </Link>
             <button
               type="button"
@@ -262,11 +262,10 @@ export default function TestlerPage() {
             <div
               className="h-full bg-slate-900 transition-all"
               style={{
-                width: `${
-                  questions.length
+                width: `${questions.length
                     ? ((Math.min(step + 1, questions.length)) / questions.length) * 100
                     : 0
-                }%`,
+                  }%`,
               }}
             />
           </div>

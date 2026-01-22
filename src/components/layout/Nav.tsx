@@ -13,7 +13,7 @@ export function Nav() {
     { href: "/hakkinda", label: "Hakkımızda" },
     { href: "/hizmetler", label: "Hizmetler" },
     { href: "/testler", label: "Testler" },
-    { href: "/randevu", label: "Randevu Al", cta: true },
+    { href: "/randevu", label: "Randevu Oluştur", cta: true },
     { href: "/iletisim", label: "İletişim" },
   ]);
 
@@ -54,9 +54,17 @@ export function Nav() {
       }}
     >
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
-        <Link href="/" className="select-none leading-tight text-slate-900">
-          <span className="font-signature block sm:inline text-2xl">Psikolog Eda Keklik</span>
-          <span className="font-signature block sm:inline sm:ml-2 text-2xl">Akalp</span>
+        <Link href="/" className="group relative select-none">
+          <div className="flex flex-col sm:flex-row sm:items-baseline sm:gap-1.5">
+            <span className="font-signature text-2xl tracking-wide text-slate-800 transition-colors group-hover:text-slate-900 sm:text-3xl">
+              Psikolog
+            </span>
+            <span className="font-signature text-2xl tracking-wide text-slate-800 transition-colors group-hover:text-slate-900 sm:text-3xl">
+              Eda Keklik Akalp
+            </span>
+          </div>
+          {/* Premium underline effect */}
+          <span className="absolute -bottom-1 left-0 h-0.5 w-0 rounded-full bg-gradient-to-r from-slate-400 to-slate-600 transition-all duration-300 group-hover:w-full" />
         </Link>
 
         {/* Desktop nav */}

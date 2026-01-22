@@ -30,12 +30,12 @@ export default async function Page() {
                 </span>
 
                 <span className="mt-2 block">
-                  <span className="font-signature text-5xl tracking-wide md:text-6xl lg:text-7xl">
+                  <span className="text-5xl font-semibold tracking-tight md:text-6xl lg:text-7xl">
                     <span className="relative inline-block">
                       <span className="block">Bilimsel</span>
 
                       <span className="mt-1 block">
-                        <span className="relative inline-block h-[1.05em] overflow-hidden align-baseline">
+                        <span className="relative inline-block h-[1.05em] overflow-hidden align-baseline font-signature tracking-wide">
                           <HeroWords words={words} />
                         </span>
                       </span>
@@ -150,42 +150,59 @@ export default async function Page() {
 
         {/* SERVICES */}
         <section className="pb-12 md:pb-14">
-          <div className="rounded-3xl border border-slate-200/70 bg-white/60 p-8 shadow-sm backdrop-blur md:p-10">
-            <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+          <div className="rounded-[32px] border border-slate-200/70 bg-gradient-to-br from-white/80 to-white/50 p-8 shadow-sm backdrop-blur md:p-10">
+            <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
               <div>
+                <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-slate-200/70 bg-white/70 px-4 py-1.5 text-xs font-medium text-slate-700 backdrop-blur">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                  Profesyonel Danışmanlık
+                </div>
                 <h2 className="text-2xl font-semibold tracking-tight text-slate-900 md:text-3xl">
-                  Hizmetler
+                  Hizmetlerimiz
                 </h2>
                 <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-700 md:text-base">
-                  İhtiyacınıza uygun hizmeti seçip randevu oluşturabilirsiniz.
+                  Uzmanlarımızdan destek almak için size uygun hizmeti seçip randevu oluşturabilirsiniz.
                 </p>
               </div>
 
               <Link
                 href="/hizmetler"
-                className="inline-flex w-fit items-center justify-center rounded-full border border-slate-300/70 bg-white/70 px-5 py-3 text-sm font-medium text-slate-900 shadow-sm transition hover:bg-white/90 hover:shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900/20"
+                className="group inline-flex w-fit items-center gap-2 rounded-2xl border border-slate-300/70 bg-white/70 px-5 py-3 text-sm font-medium text-slate-900 shadow-sm transition hover:bg-white/90 hover:shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900/20"
               >
                 Tümünü Gör
+                <span className="transition-transform group-hover:translate-x-0.5">→</span>
               </Link>
             </div>
 
-            <div className="mt-7 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {services.slice(0, 6).map((s: any) => (
                 <div
                   key={s.id}
-                  className="group rounded-3xl border border-slate-200/70 bg-white/70 p-7 shadow-sm transition hover:-translate-y-0.5 hover:bg-white/90 hover:shadow focus-within:ring-2 focus-within:ring-slate-900/10"
+                  className="group relative overflow-hidden rounded-[24px] border border-slate-200/70 bg-white/70 p-6 shadow-sm backdrop-blur transition duration-300 hover:-translate-y-1 hover:bg-white hover:shadow-lg hover:shadow-slate-200/50"
                 >
-                  <h3 className="text-lg font-semibold text-slate-900">{s.title}</h3>
-                  <p className="mt-2 text-sm leading-relaxed text-slate-700">{s.description}</p>
+                  {/* Gradient Accent */}
+                  <div className="absolute -right-6 -top-6 h-20 w-20 rounded-full bg-gradient-to-br from-slate-100 to-slate-50 opacity-60 transition group-hover:scale-150" />
 
-                  <div className="mt-5 flex items-center justify-between">
-                    <span className="rounded-full border border-slate-200/70 bg-white/60 px-3 py-2 text-xs text-slate-700 shadow-sm">
-                      {s.duration_min ?? s.durationMin} dk
-                    </span>
+                  <div className="relative">
+                    <div className="mb-4 inline-flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-slate-100 to-slate-50 text-lg">
+                      {s.icon || "✨"}
+                    </div>
 
-                    <Link href="/randevu" className="text-sm font-medium text-slate-900 transition hover:underline">
-                      Randevu Al →
-                    </Link>
+                    <h3 className="text-lg font-semibold text-slate-900">{s.title}</h3>
+                    <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-slate-600">{s.description}</p>
+
+                    <div className="mt-5 flex items-center justify-between border-t border-slate-100 pt-4">
+                      <div className="text-xs text-slate-500">
+                        <span className="font-medium text-slate-700">{s.durationMin}</span> dakika
+                      </div>
+                      <Link
+                        href="/randevu"
+                        className="inline-flex items-center gap-1 text-sm font-medium text-slate-900 transition hover:gap-2"
+                      >
+                        Randevu
+                        <span>→</span>
+                      </Link>
+                    </div>
                   </div>
                 </div>
               ))}

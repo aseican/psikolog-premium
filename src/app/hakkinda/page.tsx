@@ -25,7 +25,9 @@ type Person2 = {
   name: string;
   role: string;
   image: string;
-  content: string[];
+  intro: string;
+  services: { title: string; description: string }[];
+  applications: { title: string; description: string }[];
 };
 
 type AboutData = {
@@ -145,7 +147,19 @@ export default function AboutPage() {
               aria-expanded={active === "p2"}
             >
               <div className="relative overflow-hidden">
-                <div className="aspect-[4/5] w-full bg-gradient-to-b from-slate-100 to-slate-200 transition duration-500 group-hover:scale-[1.01]" />
+                <div className="relative aspect-[4/5] w-full">
+                  {person2.image ? (
+                    <Image
+                      src={person2.image}
+                      alt={person2.name}
+                      fill
+                      className="object-cover transition duration-500 group-hover:scale-[1.03]"
+                      priority
+                    />
+                  ) : (
+                    <div className="h-full w-full bg-gradient-to-b from-slate-100 to-slate-200 transition duration-500 group-hover:scale-[1.01]" />
+                  )}
+                </div>
 
                 <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/5 via-transparent to-transparent opacity-0 transition duration-300 group-hover:opacity-100" />
 
@@ -262,11 +276,44 @@ export default function AboutPage() {
 
               {active === "p2" && (
                 <>
-                  {person2.content.map((text, i) => (
-                    <p key={i} className="mt-6 max-w-3xl text-slate-700">
-                      {text}
-                    </p>
-                  ))}
+                  {person2.intro && (
+                    <p
+                      className="mt-6 max-w-3xl text-slate-700"
+                      dangerouslySetInnerHTML={{ __html: person2.intro }}
+                    />
+                  )}
+
+                  <div className="mt-8 grid gap-4 md:grid-cols-2">
+                    {(person2.services?.length ?? 0) > 0 && (
+                      <div className="rounded-2xl border border-slate-200/70 bg-white/70 p-5 shadow-sm">
+                        <div className="text-sm font-medium text-slate-900">
+                          Hizmetlerimiz
+                        </div>
+                        <ul className="mt-3 list-disc pl-5 text-sm text-slate-700">
+                          {person2.services.map((service, i) => (
+                            <li key={i}>
+                              <strong>{service.title}:</strong> {service.description}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {(person2.applications?.length ?? 0) > 0 && (
+                      <div className="rounded-2xl border border-slate-200/70 bg-white/70 p-5 shadow-sm">
+                        <div className="text-sm font-medium text-slate-900">
+                          Uygulamalarımız
+                        </div>
+                        <ul className="mt-3 list-disc pl-5 text-sm text-slate-700">
+                          {person2.applications.map((app, i) => (
+                            <li key={i}>
+                              <strong>{app.title}:</strong> {app.description}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
                 </>
               )}
             </div>

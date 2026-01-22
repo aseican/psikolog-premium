@@ -28,7 +28,7 @@ export function Hero() {
               href="/randevu"
               className="rounded-2xl bg-slate-900 px-5 py-3 text-sm font-medium text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-slate-800 hover:shadow-md"
             >
-              Randevu Al
+              Randevu Oluştur
             </Link>
 
             <Link
@@ -51,31 +51,31 @@ export function Hero() {
           </div>
 
           <div className="mt-4 rounded-2xl border bg-white p-4">
-  <div className="text-sm font-medium">Uzmanlık Alanları</div>
-  <div className="mt-3 flex flex-wrap gap-2">
-    {[
-      "Kaygı & Panik",
-      "Depresyon",
-      "Stres Yönetimi",
-      "Özgüven",
-      "İlişki Problemleri",
-      "Travma Sonrası",
-      "Sınav Kaygısı",
-      "Ergen Danışmanlığı",
-    ].map((t) => (
-      <span
-        key={t}
-        className="rounded-full border bg-white px-3 py-2 text-xs text-slate-700"
-      >
-        {t}
-      </span>
-    ))}
-  </div>
+            <div className="text-sm font-medium">Uzmanlık Alanları</div>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {[
+                "Kaygı & Panik",
+                "Depresyon",
+                "Stres Yönetimi",
+                "Özgüven",
+                "İlişki Problemleri",
+                "Travma Sonrası",
+                "Sınav Kaygısı",
+                "Ergen Danışmanlığı",
+              ].map((t) => (
+                <span
+                  key={t}
+                  className="rounded-full border bg-white px-3 py-2 text-xs text-slate-700"
+                >
+                  {t}
+                </span>
+              ))}
+            </div>
 
-  <div className="mt-3 text-xs text-slate-600">
-    Seanslar online yapılır. Uygun saatleri “Randevu Al” ekranında görebilirsiniz.
-  </div>
-</div>
+            <div className="mt-3 text-xs text-slate-600">
+              Seanslar online yapılır. Uzmanlarımızdan destek almak için randevu oluşturabilirsiniz.
+            </div>
+          </div>
 
         </div>
       </div>

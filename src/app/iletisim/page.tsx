@@ -98,7 +98,7 @@ export default function ContactPage() {
           <div>
             <h1 className="text-2xl font-semibold">İletişim</h1>
             <p className="mt-2 text-slate-700">
-              Sorularınız için ulaşabilirsiniz. Randevu almak için "Randevu Al" sayfasını kullanabilirsiniz.
+              Sorularınız için ulaşabilirsiniz. Uzmanlarımızdan destek almak için randevu oluşturabilirsiniz.
             </p>
           </div>
 
@@ -106,7 +106,7 @@ export default function ContactPage() {
             href="/randevu"
             className="inline-flex w-fit rounded-2xl bg-slate-900 px-5 py-3 text-sm font-medium text-white hover:bg-slate-800"
           >
-            Randevu Al
+            Randevu Oluştur
           </Link>
         </div>
 
@@ -122,13 +122,13 @@ export default function ContactPage() {
                   className="mt-4 rounded-2xl border px-4 py-2 text-sm font-medium hover:bg-slate-50"
                   type="button"
                   onClick={() => {
-  const phone = (contact.phone || "").replace(/[^0-9]/g, "");
-  if (phone) {
-    window.open(`https://wa.me/${phone}`, "_blank");
-  } else {
-    alert("Telefon numarası bulunamadı");
-  }
-}}
+                    const phone = (contact.phone || "").replace(/[^0-9]/g, "");
+                    if (phone) {
+                      window.open(`https://wa.me/${phone}`, "_blank");
+                    } else {
+                      alert("Telefon numarası bulunamadı");
+                    }
+                  }}
                 >
                   WhatsApp
                 </button>
@@ -186,11 +186,10 @@ export default function ContactPage() {
 
             {msg && (
               <div
-                className={`mt-4 rounded-2xl border px-4 py-3 text-sm ${
-                  msg.includes("✅")
+                className={`mt-4 rounded-2xl border px-4 py-3 text-sm ${msg.includes("✅")
                     ? "border-green-200 bg-green-50 text-green-800"
                     : "border-red-200 bg-red-50 text-red-800"
-                }`}
+                  }`}
               >
                 {msg}
               </div>
